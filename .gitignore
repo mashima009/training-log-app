@@ -1,0 +1,12 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+
+# Logs
+*.log
+
+# Local test output
+__pycache__/

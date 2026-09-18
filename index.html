@@ -1,0 +1,2327 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#090d14" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <title>Training Log</title>
+    <style>
+          :root {
+            --bg: #090d14;
+            --bg-2: #111827;
+            --panel: rgba(17, 24, 39, 0.92);
+            --primary: #f59e0b;
+            --primary-strong: #f97316;
+            --text: #f8fafc;
+            --muted: #a7b1c3;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --border: rgba(148, 163, 184, 0.18);
+            --shadow: 0 18px 40px rgba(0, 0, 0, 0.38);
+            --input-bg: rgba(15, 23, 42, 0.9);
+            --soft-panel: #171f2d;
+            --luxury-line: rgba(252, 211, 77, 0.28);
+          }
+
+          * { box-sizing: border-box; }
+
+          body {
+            margin: 0;
+            font-family: "Segoe UI", "Yu Gothic UI", sans-serif;
+            background:
+              radial-gradient(circle at top, rgba(245, 158, 11, 0.18), transparent 26%),
+              radial-gradient(circle at 20% 0%, rgba(249, 115, 22, 0.12), transparent 28%),
+              linear-gradient(180deg, #0a0f17 0%, var(--bg) 100%);
+            color: var(--text);
+            letter-spacing: 0.01em;
+            line-height: 1.45;
+          }
+
+          .container {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 28px 24px 60px;
+          }
+
+          .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            padding: 12px 18px;
+            border: 1px solid var(--luxury-line);
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(20, 29, 45, 0.9), rgba(14, 20, 28, 0.96));
+            box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28);
+          }
+
+          .page-nav {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 24px;
+            padding: 6px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: rgba(15, 23, 42, 0.72);
+            position: sticky;
+            top: 12px;
+            z-index: 5;
+            backdrop-filter: blur(14px);
+          }
+
+          .page-nav button {
+            min-height: 48px;
+            padding: 9px 12px;
+            background: transparent;
+            color: var(--muted);
+            font-size: 0.82rem;
+            line-height: 1.25;
+          }
+
+          .page-nav button.active {
+            background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 35%, #f97316 100%);
+            color: #1c1917;
+            box-shadow: 0 8px 18px rgba(245, 158, 11, 0.2);
+          }
+
+          .page-nav button:focus-visible {
+            outline: 3px solid rgba(252, 211, 77, 0.5);
+            outline-offset: 2px;
+          }
+
+          .page[hidden] { display: none; }
+
+          .page-intro {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 16px;
+            margin: 4px 0 18px;
+            padding: 2px 2px 14px;
+            border-bottom: 1px solid rgba(252, 211, 77, 0.2);
+          }
+
+          .page-kicker {
+            margin: 0 0 4px;
+            color: #fbbf24;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+          }
+
+          .page-title {
+            margin: 0;
+            font-size: clamp(1.35rem, 2vw, 1.8rem);
+            letter-spacing: 0.04em;
+          }
+
+          .page-description {
+            max-width: 360px;
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.82rem;
+            text-align: right;
+          }
+
+          .management-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+          }
+
+          .management-actions {
+            display: grid;
+            gap: 12px;
+          }
+
+          .management-actions button,
+          .management-actions label {
+            width: 100%;
+            text-align: center;
+          }
+
+          .management-actions label {
+            display: block;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            color: #1e3a8a;
+            font-weight: 700;
+            cursor: pointer;
+          }
+
+          .management-actions input { display: none; }
+          .danger-btn { background: rgba(239, 68, 68, 0.16); color: #fca5a5; }
+          .management-status { margin: 0; min-height: 1.5em; color: var(--muted); font-size: 0.85rem; }
+
+          .metrics-layout {
+            display: grid;
+            grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
+            gap: 20px;
+            align-items: start;
+          }
+
+          .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+          }
+
+          .metric-card {
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: linear-gradient(180deg, rgba(17, 24, 39, 0.9), rgba(15, 23, 42, 0.78));
+          }
+
+          .metric-card label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--muted);
+            font-size: 0.8rem;
+          }
+
+          .metric-card input { font-size: 1.05rem; font-weight: 700; }
+
+          .image-dropzone {
+            display: grid;
+            gap: 12px;
+            padding: 18px;
+            border: 1px dashed rgba(252, 211, 77, 0.5);
+            border-radius: 14px;
+            background: rgba(245, 158, 11, 0.08);
+          }
+
+          .image-preview {
+            display: none;
+            max-width: 100%;
+            max-height: 360px;
+            margin: 0 auto;
+            border-radius: 10px;
+            object-fit: contain;
+          }
+
+          .image-preview.visible { display: block; }
+
+          .metrics-status { margin: 0; color: var(--muted); font-size: 0.82rem; }
+
+          .metrics-analysis {
+            display: grid;
+            gap: 16px;
+            margin-top: 20px;
+          }
+
+          .metrics-summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+          }
+
+          .trend-card {
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: linear-gradient(180deg, rgba(17, 24, 39, 0.9), rgba(15, 23, 42, 0.78));
+          }
+
+          .trend-card strong { display: block; margin-bottom: 6px; }
+          .trend-card span { color: var(--muted); font-size: 0.8rem; }
+
+          .metrics-chart {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+          }
+
+          .line-chart-card {
+            min-width: 0;
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: rgba(15, 23, 42, 0.72);
+          }
+
+          .line-chart-card strong { display: block; margin-bottom: 8px; }
+          .line-chart { width: 100%; height: 150px; overflow: visible; }
+          .line-chart-grid { stroke: rgba(148, 163, 184, 0.16); stroke-width: 1; }
+          .line-chart-path { fill: none; stroke: #fbbf24; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+          .line-chart-point { fill: #f97316; stroke: #fff7d6; stroke-width: 2; }
+          .line-chart-text { fill: var(--muted); font-size: 10px; }
+
+          .history-list { display: grid; gap: 8px; }
+          .history-row { display: grid; grid-template-columns: 1fr repeat(3, auto); gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(148, 163, 184, 0.12); color: var(--muted); font-size: 0.82rem; }
+          .history-row strong { color: var(--text); }
+
+          h1 {
+            margin: 0;
+            font-size: clamp(1.8rem, 2vw, 2.7rem);
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #fff7d6 0%, #fbbf24 25%, #f59e0b 58%, #f97316 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+          }
+
+          .stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+          }
+
+          .week-summary { margin-bottom: 24px; }
+
+          .week-summary .list-header,
+          .layout .list-header {
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(252, 211, 77, 0.16);
+          }
+
+          .list-header h2 {
+            font-size: 1.18rem;
+            letter-spacing: 0.03em;
+          }
+
+          .week-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(160px, 1fr));
+            gap: 16px;
+          }
+
+          .chart-panel { margin-top: 16px; }
+
+          .chart-box {
+            display: flex;
+            align-items: end;
+            gap: 10px;
+            min-height: 160px;
+            padding: 16px 10px 10px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.75), rgba(17, 24, 39, 0.96));
+          }
+
+          .chart-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+          }
+
+          .chart-bar-wrap {
+            width: 100%;
+            min-height: 110px;
+            display: flex;
+            align-items: end;
+            justify-content: center;
+          }
+
+          .chart-bar {
+            width: 100%;
+            max-width: 28px;
+            border-radius: 10px 10px 0 0;
+            background: linear-gradient(180deg, #fef3c7 0%, #fbbf24 22%, #f59e0b 58%, #f97316 100%);
+            box-shadow: inset 0 -10px 18px rgba(255,255,255,0.16), 0 8px 16px rgba(245, 158, 11, 0.28);
+          }
+
+          .chart-label { font-size: 0.72rem; color: var(--muted); }
+
+          .chart-value {
+            font-size: 0.7rem;
+            color: var(--text);
+            font-weight: 700;
+          }
+
+          .month-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 14px;
+            margin-top: 16px;
+          }
+
+          .month-item {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: rgba(17, 24, 39, 0.8);
+            padding: 12px 10px;
+          }
+
+          .month-item strong {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.86rem;
+          }
+
+          .month-item span {
+            display: block;
+            color: var(--muted);
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+          }
+
+          .month-bar-wrap {
+            width: 100%;
+            height: 10px;
+            border-radius: 999px;
+            background: #e2e8f0;
+            overflow: hidden;
+          }
+
+          .month-bar {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #fcd34d 0%, #f59e0b 45%, #f97316 100%);
+            box-shadow: 0 0 18px rgba(245, 158, 11, 0.22);
+          }
+
+          .segment-chart {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+          }
+
+          .segment-card {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: rgba(17, 24, 39, 0.8);
+            padding: 12px 10px;
+          }
+
+          .segment-card strong {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.82rem;
+          }
+
+          .segment-card span {
+            color: var(--muted);
+            font-size: 0.76rem;
+          }
+
+          .segment-bar-wrap {
+            width: 100%;
+            height: 8px;
+            border-radius: 999px;
+            background: #e2e8f0;
+            overflow: hidden;
+            margin-top: 8px;
+          }
+
+          .segment-bar {
+            height: 100%;
+            border-radius: 999px;
+          }
+
+          .stat-card {
+            background: linear-gradient(180deg, rgba(17, 24, 39, 0.94), rgba(15, 23, 42, 0.9));
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 18px 18px 14px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+          }
+
+          .stat-card::before {
+            content: "";
+            position: absolute;
+            inset: 0 auto auto 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(252, 211, 77, 0.8), transparent);
+          }
+
+          .stat-label {
+            color: var(--muted);
+            font-size: 0.82rem;
+            margin-bottom: 10px;
+          }
+
+          .stat-value {
+            font-size: clamp(1.3rem, 2vw, 2rem);
+            font-weight: 700;
+          }
+
+          .layout {
+            display: grid;
+            grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
+            gap: 20px;
+            align-items: start;
+          }
+
+          .panel {
+            background: linear-gradient(180deg, rgba(17, 24, 39, 0.96), rgba(10, 14, 21, 0.96));
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            padding: 22px;
+            position: relative;
+            overflow: hidden;
+          }
+
+          .panel::before {
+            content: "";
+            position: absolute;
+            inset: 0 auto auto 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, rgba(250, 204, 21, 0.08), rgba(251, 146, 60, 0.85), rgba(250, 204, 21, 0.08));
+          }
+
+          form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+          }
+
+          .field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+          }
+
+          label {
+            font-size: 0.92rem;
+            font-weight: 600;
+          }
+
+          input, select, textarea, button {
+            font: inherit;
+          }
+
+          input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(12, 18, 28, 0.96));
+            color: var(--text);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+          }
+
+          input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: rgba(252, 211, 77, 0.7);
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+          }
+
+          textarea {
+            min-height: 86px;
+            resize: vertical;
+          }
+
+          .inline-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+          }
+
+          .set-fields {
+            display: grid;
+            gap: 12px;
+            margin-top: 14px;
+          }
+
+          .set-rest-control {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto auto;
+            gap: 8px;
+            align-items: end;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(252, 211, 77, 0.18);
+          }
+
+          .set-rest-control label { display: block; margin-bottom: 8px; }
+          .rest-start, .rest-stop { min-width: 76px; }
+          .rest-start { background: linear-gradient(135deg, #fcd34d, #f97316); color: #1c1917; }
+          .rest-stop { background: rgba(239, 68, 68, 0.18); color: #fca5a5; }
+          .set-rest-timer {
+            display: none;
+            grid-column: 1 / -1;
+            padding: 12px;
+            border: 1px solid rgba(252, 211, 77, 0.38);
+            border-radius: 12px;
+            background: rgba(9, 13, 20, 0.7);
+            text-align: center;
+          }
+
+          .set-rest-timer.visible { display: block; }
+          .set-rest-timer strong { display: block; color: #fcd34d; font-size: 1.8rem; letter-spacing: 0.08em; }
+          .set-rest-timer span { color: var(--muted); font-size: 0.78rem; }
+
+          .set-entry {
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: linear-gradient(180deg, rgba(17, 24, 39, 0.8), rgba(15, 23, 42, 0.9));
+          }
+
+          .set-label {
+            margin-bottom: 10px;
+            color: var(--text);
+            font-size: 0.9rem;
+            font-weight: 700;
+          }
+
+          .field-hint {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.85rem;
+            line-height: 1.5;
+          }
+
+          .submit-btn, .delete-btn { cursor: pointer; }
+
+          .finish-btn {
+            width: 100%;
+            margin-top: 10px;
+            padding: 12px 16px;
+            border: 1px solid rgba(252, 211, 77, 0.4);
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.16), rgba(249, 115, 22, 0.18));
+            color: var(--text);
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+          }
+
+          .finish-btn:disabled,
+          .submit-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+          }
+
+          .day-status {
+            margin: 10px 0 0;
+            color: var(--muted);
+            font-size: 0.85rem;
+            line-height: 1.5;
+          }
+
+          .summary-box {
+            margin-top: 8px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: linear-gradient(180deg, rgba(245, 158, 11, 0.12), rgba(17, 24, 39, 0.94));
+            padding: 12px 14px;
+          }
+
+          .summary-box h3 {
+            margin: 0 0 8px;
+            font-size: 0.92rem;
+          }
+
+          .summary-box p {
+            margin: 4px 0;
+            color: var(--text);
+            font-size: 0.84rem;
+            line-height: 1.5;
+          }
+
+          .summary-box strong { font-weight: 700; }
+
+          .sync-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 12px;
+          }
+
+          .sync-actions button {
+            padding: 10px 12px;
+            font-size: 0.8rem;
+          }
+
+          .sync-actions .secondary {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            color: #1e3a8a;
+          }
+
+          .sync-actions .ghost {
+            background: linear-gradient(135deg, #f5f5f4, #e2e8f0);
+            color: #0f172a;
+          }
+
+          .flow-note {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.78rem;
+            line-height: 1.5;
+          }
+
+          button {
+            border: none;
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.15s ease, opacity 0.15s ease;
+          }
+
+          .submit-btn {
+            background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 28%, #f97316 100%);
+            color: white;
+            box-shadow: 0 12px 24px rgba(245, 158, 11, 0.26);
+          }
+
+          .sync-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(17, 24, 39, 0.8));
+            color: var(--text);
+            font-size: 0.9rem;
+          }
+
+          .category-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+          }
+
+          .category-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(148, 163, 184, 0.08);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            color: var(--text);
+            border-radius: 999px;
+            padding: 6px 10px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 0.84rem;
+          }
+
+          .category-chip input { width: auto; margin: 0; }
+
+          .sync-row input { width: auto; margin: 0; }
+
+          .delete-btn {
+            background: rgba(239, 68, 68, 0.12);
+            color: #fca5a5;
+          }
+
+          button:hover { transform: translateY(-1px); }
+
+          .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+          }
+
+          .list-header h2 { margin: 0; font-size: 1.3rem; }
+
+          .record-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+          }
+
+          .record-item {
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: linear-gradient(180deg, rgba(17, 24, 39, 0.82), rgba(15, 23, 42, 0.94));
+            padding: 18px;
+          }
+
+          .record-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+          }
+
+          .record-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+          }
+
+          .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            padding: 5px 10px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+          }
+
+          .badge.chest { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border-color: rgba(239, 68, 68, 0.45); }
+          .badge.arm { background: rgba(249, 115, 22, 0.2); color: #fdba74; border-color: rgba(249, 115, 22, 0.4); }
+          .badge.shoulder { background: rgba(168, 85, 247, 0.2); color: #d8b4fe; border-color: rgba(168, 85, 247, 0.45); }
+          .badge.back { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border-color: rgba(59, 130, 246, 0.45); }
+          .badge.leg { background: rgba(34, 197, 94, 0.2); color: #86efac; border-color: rgba(34, 197, 94, 0.45); }
+          .badge.abs { background: rgba(236, 72, 153, 0.2); color: #f9a8d4; border-color: rgba(236, 72, 153, 0.45); }
+
+          .record-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 14px;
+            color: var(--muted);
+            font-size: 0.88rem;
+            margin-bottom: 8px;
+          }
+
+          .set-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 8px;
+            color: var(--text);
+            font-size: 0.85rem;
+          }
+
+          .set-summary span {
+            padding: 4px 8px;
+            border-radius: 8px;
+            background: rgba(148, 163, 184, 0.12);
+          }
+
+          .record-notes {
+            color: #dfe7f4;
+            line-height: 1.55;
+            white-space: pre-wrap;
+          }
+
+          .empty {
+            color: var(--muted);
+            padding: 26px 0;
+            text-align: center;
+          }
+
+          @media (max-width: 820px) {
+            .container { padding: 18px 14px 40px; }
+            .app-header { padding: 10px 14px; }
+            .page-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 5px; }
+            .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+            .layout { grid-template-columns: 1fr; gap: 16px; }
+            .panel { padding: 16px; border-radius: 16px; }
+            .week-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+            .stat-card { padding: 14px 12px 12px; border-radius: 14px; }
+            .stat-value { font-size: 1.35rem; }
+            .record-top { align-items: flex-start; flex-direction: column; }
+            .page-intro { display: block; margin-bottom: 14px; }
+            .page-description { margin-top: 8px; text-align: left; }
+            .metrics-layout { grid-template-columns: 1fr; }
+            .metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .management-grid { grid-template-columns: 1fr; }
+            .metrics-summary { grid-template-columns: 1fr; }
+            .metrics-chart { grid-template-columns: 1fr; }
+            .set-rest-control { grid-template-columns: 1fr 1fr; }
+            .set-rest-control .field { grid-column: 1 / -1; }
+            .rest-start, .rest-stop { width: 100%; }
+            .history-row { grid-template-columns: 1fr 1fr; }
+            input, select, textarea, button { min-height: 46px; font-size: 16px; }
+            .page-nav { position: sticky; top: 6px; }
+            .page-nav button { min-height: 52px; padding: 10px 8px; }
+            .management-actions { gap: 12px; }
+            .management-actions label, .management-actions button { width: 100%; }
+            .record-meta { gap: 8px; }
+            .record-meta span { display: inline-flex; min-height: 30px; align-items: center; }
+          }
+        </style>
+  </head>
+  <body>
+    <div class="container">
+      <header class="app-header">
+        <h1>Training Log</h1>
+      </header>
+
+      <nav class="page-nav" aria-label="ページ切り替え">
+        <button class="active" type="button" data-page="workout-page">トレーニング記録</button>
+        <button type="button" data-page="analytics-page">統計・分析</button>
+        <button type="button" data-page="metrics-page">身体データ</button>
+        <button type="button" data-page="management-page">データ管理</button>
+      </nav>
+
+      <div class="page" id="workout-page">
+        <div class="page-intro">
+          <div>
+            <p class="page-kicker">DAILY SESSION</p>
+            <h2 class="page-title">トレーニング記録</h2>
+          </div>
+          <p class="page-description">今日のメニュー、セット、重量を一つの画面で管理します。</p>
+        </div>
+        <section class="stats" id="stats"></section>
+
+        <div class="layout">
+          <aside class="panel">
+            <form id="log-form">
+              <div class="field">
+                <label for="date">日付</label>
+                <input id="date" name="date" type="date" required />
+              </div>
+
+              <div class="field">
+                <label>カテゴリ（複数選択可）</label>
+                <div class="category-options">
+                  <label class="category-chip"><input type="checkbox" name="category" value="胸" /> 胸</label>
+                  <label class="category-chip"><input type="checkbox" name="category" value="腕" /> 腕</label>
+                  <label class="category-chip"><input type="checkbox" name="category" value="肩" /> 肩</label>
+                  <label class="category-chip"><input type="checkbox" name="category" value="背中" /> 背中</label>
+                  <label class="category-chip"><input type="checkbox" name="category" value="脚" /> 脚</label>
+                  <label class="category-chip"><input type="checkbox" name="category" value="腹筋" /> 腹筋</label>
+                </div>
+              </div>
+
+              <div class="field">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                  <label for="workout">種目</label>
+                  <span style="font-size:0.75rem; color: var(--muted);">種目を追加</span>
+                </div>
+                <input id="workout" name="workout" type="text" placeholder="例: ベンチプレス" required />
+              </div>
+
+              <div class="field">
+                <label for="intensity">強度</label>
+                <select id="intensity" name="intensity">
+                  <option value="軽め">軽め</option>
+                  <option value="普通">普通</option>
+                  <option value="しっかり">しっかり</option>
+                  <option value="ハード">ハード</option>
+                </select>
+              </div>
+
+              <div class="inline-grid">
+                <div class="field">
+                  <label for="sets">セット数</label>
+                  <select id="sets" name="sets">
+                    <option value="">セット数を選択</option>
+                    <option value="1">1セット</option>
+                    <option value="2">2セット</option>
+                    <option value="3">3セット</option>
+                    <option value="4">4セット</option>
+                    <option value="5">5セット</option>
+                  </select>
+                </div>
+              </div>
+
+              <div id="set-fields" class="set-fields" aria-live="polite">
+                <p class="field-hint">セット数を選ぶと、セットごとの重量と回数を入力できます。</p>
+              </div>
+
+              <div class="field">
+                <label for="notes">メモ</label>
+                <textarea id="notes" name="notes" placeholder="今日の感想や気づきを記録"></textarea>
+              </div>
+
+              <label class="sync-row" for="sync-google">
+                <input id="sync-google" type="checkbox" checked />
+                <span>Google Keep / Calendar に同期する</span>
+              </label>
+
+              <button class="submit-btn" type="submit">種目を追加</button>
+              <button class="secondary" id="cancel-edit" type="button" hidden>編集をキャンセル</button>
+              <button class="finish-btn" id="finish-day" type="button">本日のトレーニングを記録する</button>
+              <div class="summary-box" id="day-summary-box" aria-live="polite">
+                <h3>今日の記録状況</h3>
+                <p>まだ種目がありません。</p>
+              </div>
+              <div class="sync-actions">
+                <button id="calendar-share" class="secondary" type="button">Calendarへ送る</button>
+                <button id="keep-share" class="ghost" type="button">Keepへ送る</button>
+              </div>
+              <p class="flow-note">1. 種目を追加して記録する　→　2. 本日のトレーニングを記録する</p>
+              <p class="day-status" id="day-status">記録を追加すると、同じ日に続けて種目を登録できます。</p>
+            </form>
+          </aside>
+
+          <main class="panel">
+            <div class="list-header">
+              <h2>記録一覧</h2>
+            </div>
+            <div id="record-list" class="record-list"></div>
+          </main>
+        </div>
+      </div>
+
+      <div class="page" id="analytics-page" hidden>
+        <div class="page-intro">
+          <div>
+            <p class="page-kicker">PERFORMANCE INSIGHTS</p>
+            <h2 class="page-title">統計・分析</h2>
+          </div>
+          <p class="page-description">週間・月間の負荷と部位別バランスを視覚的に確認します。</p>
+        </div>
+        <section class="panel week-summary">
+          <div class="list-header">
+            <h2>今週の統計</h2>
+          </div>
+          <div class="week-grid" id="week-summary-grid"></div>
+          <div class="chart-panel">
+            <div class="chart-box" id="week-chart"></div>
+          </div>
+        </section>
+
+        <section class="panel week-summary">
+          <div class="list-header">
+            <h2>月間比較</h2>
+          </div>
+          <div class="month-list" id="month-compare"></div>
+        </section>
+
+        <section class="panel week-summary">
+          <div class="list-header">
+            <h2>週ごとの部位別グラフ</h2>
+          </div>
+          <div class="segment-chart" id="segment-chart"></div>
+        </section>
+      </div>
+
+      <div class="page" id="metrics-page" hidden>
+        <div class="metrics-layout">
+          <section class="panel">
+            <div class="list-header">
+              <h2>測定画像</h2>
+            </div>
+            <div class="image-dropzone">
+              <label for="metrics-image">TANITA FITのスクリーンショット</label>
+              <input id="metrics-image" type="file" accept="image/*" />
+              <img id="metrics-image-preview" class="image-preview" alt="アップロードした測定画像" />
+              <p class="metrics-status" id="metrics-image-status">画像を添付すると、この画面で確認できます。</p>
+            </div>
+            <p class="field-hint">今回の画像から読み取った値を入力済みです。保存前に内容を確認してください。</p>
+          </section>
+
+          <section class="panel">
+            <div class="list-header">
+              <h2>測定結果</h2>
+            </div>
+            <form id="metrics-form">
+              <div class="field">
+                <label for="metric-date">測定日</label>
+                <input id="metric-date" type="date" value="2026-09-18" required />
+              </div>
+              <div class="metrics-grid">
+                <div class="metric-card"><label for="metric-weight">体重（kg）</label><input id="metric-weight" type="number" step="0.1" value="71.9" required /></div>
+                <div class="metric-card"><label for="metric-bmi">BMI</label><input id="metric-bmi" type="number" step="0.1" value="24.9" required /></div>
+                <div class="metric-card"><label for="metric-body-fat">体脂肪率（%）</label><input id="metric-body-fat" type="number" step="0.1" value="12.6" required /></div>
+                <div class="metric-card"><label for="metric-visceral-fat">内臓脂肪レベル</label><input id="metric-visceral-fat" type="number" step="1" value="7" required /></div>
+                <div class="metric-card"><label for="metric-muscle">筋肉量（kg）</label><input id="metric-muscle" type="number" step="0.1" value="59.6" required /></div>
+                <div class="metric-card"><label for="metric-bone">推定骨量（kg）</label><input id="metric-bone" type="number" step="0.1" value="3.2" required /></div>
+                <div class="metric-card"><label for="metric-bmr">基礎代謝量（kcal）</label><input id="metric-bmr" type="number" step="1" value="1770" required /></div>
+                <div class="metric-card"><label for="metric-age">体内年齢（才）</label><input id="metric-age" type="number" step="1" value="20" required /></div>
+                <div class="metric-card"><label for="metric-muscle-quality">筋質点数</label><input id="metric-muscle-quality" type="number" step="1" value="94" required /></div>
+              </div>
+              <button class="submit-btn" type="submit">身体データを保存</button>
+              <p class="day-status" id="metrics-status" aria-live="polite">スクリーンショットの内容を確認して保存してください。</p>
+            </form>
+          </section>
+        </div>
+
+        <section class="panel metrics-analysis">
+          <div class="list-header">
+            <h2>身体データの分析</h2>
+            <span class="field-hint">最新の測定結果</span>
+          </div>
+          <div class="metrics-summary" id="metrics-summary"></div>
+          <div class="metrics-chart" id="metrics-chart"></div>
+          <div class="list-header">
+            <h2>測定履歴</h2>
+          </div>
+          <div class="history-list" id="metrics-history"></div>
+        </section>
+      </div>
+
+      <div class="page" id="management-page" hidden>
+        <div class="management-grid">
+          <section class="panel">
+            <div class="list-header">
+              <h2>バックアップ</h2>
+            </div>
+            <p class="field-hint">記録と身体データをJSONファイルに保存します。スマホ変更時やブラウザ削除前に利用してください。</p>
+            <div class="management-actions">
+              <button class="submit-btn" id="export-data" type="button">バックアップを書き出す</button>
+              <label for="import-data">バックアップを読み込む<input id="import-data" type="file" accept="application/json,.json" /></label>
+              <p class="management-status" id="backup-status" aria-live="polite"></p>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="list-header">
+              <h2>Supabase 接続</h2>
+            </div>
+            <form id="supabase-config-form" class="management-actions">
+              <div class="field">
+                <label for="supabase-url">Supabase URL</label>
+                <input id="supabase-url" type="url" placeholder="https://xxxxx.supabase.co" />
+              </div>
+              <div class="field">
+                <label for="supabase-anon-key">anon key</label>
+                <input id="supabase-anon-key" type="password" placeholder="project anon key" />
+              </div>
+              <button class="submit-btn" type="submit">Supabase設定を保存</button>
+              <button class="danger-btn" id="clear-supabase-config" type="button">Supabase設定を解除</button>
+              <p class="management-status" id="supabase-status" aria-live="polite">Supabase を使う場合は URL と anon key を設定してください。</p>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="list-header">
+              <h2>保存状況</h2>
+            </div>
+            <div class="summary-box">
+              <p id="storage-summary">記録を読み込んでいます。</p>
+            </div>
+            <div class="management-actions">
+              <button class="danger-btn" id="clear-data" type="button">すべてのデータを削除</button>
+              <p class="management-status">削除前にバックアップを作成してください。</p>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+      const STORAGE_KEY = 'training-log-app-records';
+      const SUPABASE_CONFIG_KEY = 'training-log-app-supabase-config';
+      const DEFAULT_USER_ID = 'personal-user';
+
+      const form = document.getElementById('log-form');
+      const recordList = document.getElementById('record-list');
+      const stats = document.getElementById('stats');
+      const syncGoogleCheckbox = document.getElementById('sync-google');
+      const setsSelect = document.getElementById('sets');
+      const setFields = document.getElementById('set-fields');
+      const dateInput = document.getElementById('date');
+      const submitButton = form.querySelector('.submit-btn');
+      const cancelEditButton = document.getElementById('cancel-edit');
+      const finishDayButton = document.getElementById('finish-day');
+      const calendarShareButton = document.getElementById('calendar-share');
+      const keepShareButton = document.getElementById('keep-share');
+      const dayStatus = document.getElementById('day-status');
+      const COMPLETED_DATES_KEY = 'training-log-app-completed-dates';
+      const metricsForm = document.getElementById('metrics-form');
+      const metricsImageInput = document.getElementById('metrics-image');
+      const metricsImagePreview = document.getElementById('metrics-image-preview');
+      const metricsImageStatus = document.getElementById('metrics-image-status');
+      const metricsStatus = document.getElementById('metrics-status');
+      const METRICS_KEY = 'training-log-app-body-metrics';
+      const exportDataButton = document.getElementById('export-data');
+      const importDataInput = document.getElementById('import-data');
+      const clearDataButton = document.getElementById('clear-data');
+      const backupStatus = document.getElementById('backup-status');
+      const storageSummary = document.getElementById('storage-summary');
+      const DATA_VERSION = 1;
+      const metricsSummary = document.getElementById('metrics-summary');
+      const metricsChart = document.getElementById('metrics-chart');
+      const metricsHistory = document.getElementById('metrics-history');
+      const pageButtons = document.querySelectorAll('[data-page]');
+      const pages = document.querySelectorAll('.page');
+      const restTimers = new Map();
+      let editingRecordId = null;
+      const supabaseForm = document.getElementById('supabase-config-form');
+      const supabaseUrlInput = document.getElementById('supabase-url');
+      const supabaseAnonKeyInput = document.getElementById('supabase-anon-key');
+      const supabaseStatus = document.getElementById('supabase-status');
+      const clearSupabaseConfigButton = document.getElementById('clear-supabase-config');
+
+      let supabaseClient = null;
+
+      function getSupabaseConfig() {
+        try {
+          return JSON.parse(localStorage.getItem(SUPABASE_CONFIG_KEY) || '{"url":"","anonKey":""}');
+        } catch (error) {
+          return { url: '', anonKey: '' };
+        }
+      }
+
+      function saveSupabaseConfig(config) {
+        localStorage.setItem(SUPABASE_CONFIG_KEY, JSON.stringify(config));
+      }
+
+      function isSupabaseConfigured() {
+        const config = getSupabaseConfig();
+        return Boolean(config.url && config.anonKey && config.url.includes('supabase.co'));
+      }
+
+      function initSupabaseClient() {
+        if (!window.supabase) {
+          supabaseClient = null;
+          return null;
+        }
+
+        if (!isSupabaseConfigured()) {
+          supabaseClient = null;
+          return null;
+        }
+
+        const config = getSupabaseConfig();
+        supabaseClient = window.supabase.createClient(config.url, config.anonKey);
+        return supabaseClient;
+      }
+
+      function loadSupabaseConfigInputs() {
+        const config = getSupabaseConfig();
+        supabaseUrlInput.value = config.url || '';
+        supabaseAnonKeyInput.value = config.anonKey || '';
+        if (isSupabaseConfigured()) {
+          supabaseStatus.textContent = 'Supabase 接続が設定済みです。保存されたデータは Supabase に同期されます。';
+        } else {
+          supabaseStatus.textContent = 'Supabase を使う場合は URL と anon key を設定してください。';
+        }
+      }
+
+      supabaseForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const url = supabaseUrlInput.value.trim();
+        const anonKey = supabaseAnonKeyInput.value.trim();
+        if (!url || !anonKey) {
+          supabaseStatus.textContent = 'Supabase の URL と anon key を両方入力してください。';
+          return;
+        }
+
+        saveSupabaseConfig({ url, anonKey });
+        initSupabaseClient();
+        if (!isSupabaseConfigured()) {
+          supabaseStatus.textContent = '設定の保存に失敗しました。';
+          return;
+        }
+
+        const synced = await syncSupabaseToLocal();
+        supabaseStatus.textContent = synced
+          ? 'Supabase の設定を保存し、データを同期しました。'
+          : 'Supabaseへ接続できませんでした。URL・anon key・テーブル設定を確認してください。';
+      });
+
+      clearSupabaseConfigButton.addEventListener('click', () => {
+        saveSupabaseConfig({ url: '', anonKey: '' });
+        supabaseClient = null;
+        loadSupabaseConfigInputs();
+        renderStorageSummary();
+        supabaseStatus.textContent = 'Supabase の設定を解除しました。ローカル保存に戻ります。';
+      });
+
+      async function syncSupabaseToLocal() {
+        const client = initSupabaseClient();
+        if (!client) {
+          return false;
+        }
+
+        const { data, error } = await client
+          .from('workouts')
+          .select('*, workout_sets(*)')
+          .eq('user_id', DEFAULT_USER_ID)
+          .order('date', { ascending: false });
+
+        if (error) {
+          console.error('Supabase fetch error:', error);
+          return false;
+        }
+
+        const records = (data || []).map((row) => ({
+          id: row.id,
+          date: row.date,
+          category: row.categories || [],
+          workout: row.workout_name,
+          intensity: row.intensity,
+          sets: row.set_count || 0,
+          setDetails: (row.workout_sets || []).map((set) => ({
+            weight: set.weight_type === 'bodyweight' ? '自重' : Number(set.weight || 0),
+            reps: Number(set.reps || 0),
+            restTime: Number(set.rest_seconds || 60)
+          })),
+          totalWeight: Number(row.total_weight || 0),
+          notes: row.notes || '',
+          createdAt: row.created_at,
+        }));
+
+        saveRecords(records);
+        renderRecords();
+        renderWeeklySummary();
+        renderStorageSummary();
+        return true;
+      }
+
+      async function persistWorkoutRecord(record) {
+        const client = initSupabaseClient();
+        if (!client) return;
+
+        const payload = {
+          id: record.id,
+          user_id: DEFAULT_USER_ID,
+          date: record.date,
+          workout_name: record.workout,
+          categories: Array.isArray(record.category) ? record.category : [record.category].filter(Boolean),
+          intensity: record.intensity || '普通',
+          set_count: Array.isArray(record.setDetails) ? record.setDetails.length : 0,
+          total_weight: Number(record.totalWeight || 0),
+          notes: record.notes || '',
+          created_at: new Date().toISOString(),
+        };
+
+        const { error: workoutError } = await client.from('workouts').upsert(payload, { onConflict: 'id' });
+        if (workoutError) {
+          console.error('Workout upsert error:', workoutError);
+          return;
+        }
+
+        const existingSets = (record.setDetails || []).map((set, index) => ({
+          id: `${record.id}-${index + 1}`,
+          workout_id: record.id,
+          user_id: DEFAULT_USER_ID,
+          set_index: index + 1,
+          weight: Number(set.weight || 0),
+          weight_type: set.weight === '自重' ? 'bodyweight' : 'kg',
+          reps: Number(set.reps || 0),
+          rest_seconds: Number(set.restTime || 60),
+          created_at: new Date().toISOString(),
+        }));
+
+        const { error: deleteError } = await client.from('workout_sets').delete().eq('workout_id', record.id);
+        if (deleteError) {
+          console.error('Workout set delete error:', deleteError);
+          return;
+        }
+
+        if (existingSets.length) {
+          const { error: insertError } = await client.from('workout_sets').insert(existingSets);
+          if (insertError) console.error('Workout set insert error:', insertError);
+        }
+      }
+
+      async function persistMetricHistory(history) {
+        const client = initSupabaseClient();
+        if (!client) return;
+
+        const upserts = history.map((entry) => ({
+          id: `metric-${entry.date}`,
+          user_id: DEFAULT_USER_ID,
+          date: entry.date,
+          metric_values: entry.values || {},
+          image_url: null,
+          created_at: new Date().toISOString(),
+        }));
+
+        for (const item of upserts) {
+          const { error } = await client.from('body_metrics').upsert(item, { onConflict: 'id' });
+          if (error) {
+            console.error('Body metric upsert error:', error);
+          }
+        }
+      }
+
+      async function fetchMetricHistoryFromSupabase() {
+        const client = initSupabaseClient();
+        if (!client) return [];
+
+        const { data, error } = await client
+          .from('body_metrics')
+          .select('*')
+          .eq('user_id', DEFAULT_USER_ID)
+          .order('date', { ascending: false });
+
+        if (error) {
+          console.error('Metric fetch error:', error);
+          return [];
+        }
+
+        return (data || []).map((row) => ({
+          date: row.date,
+          values: row.metric_values || {}
+        }));
+      }
+
+      pageButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const targetPage = button.dataset.page;
+          pages.forEach((page) => {
+            page.hidden = page.id !== targetPage;
+          });
+          pageButtons.forEach((pageButton) => {
+            pageButton.classList.toggle('active', pageButton === button);
+          });
+          if (targetPage === 'management-page') renderStorageSummary();
+        });
+      });
+
+      function buildBackup() {
+        return {
+          version: DATA_VERSION,
+          exportedAt: new Date().toISOString(),
+          records: getRecords(),
+          completedDates: getCompletedDates(),
+          bodyMetrics: getMetricHistory()
+        };
+      }
+
+      function renderStorageSummary() {
+        const recordCount = getRecords().length;
+        const metricCount = getMetricHistory().length;
+        const completedCount = getCompletedDates().length;
+        const modeText = isSupabaseConfigured() ? '保存先: Supabase' : '保存先: ローカル';
+        storageSummary.textContent = `${modeText} / トレーニング記録 ${recordCount}件 / 身体データ ${metricCount}件 / 完了日 ${completedCount}日`;
+      }
+
+      function isValidBackup(data) {
+        return data && typeof data === 'object' && Array.isArray(data.records) && Array.isArray(data.completedDates) && Array.isArray(data.bodyMetrics) && data.records.every((record) => record && typeof record === 'object' && typeof record.date === 'string' && typeof record.workout === 'string');
+      }
+
+      exportDataButton.addEventListener('click', () => {
+        const blob = new Blob([JSON.stringify(buildBackup(), null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `training-log-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+        backupStatus.textContent = 'バックアップを書き出しました。';
+      });
+
+      importDataInput.addEventListener('change', async () => {
+        const [file] = importDataInput.files || [];
+        if (!file) return;
+        try {
+          const data = JSON.parse(await file.text());
+          if (!isValidBackup(data)) throw new Error('invalid backup');
+          if (!confirm('現在のデータをバックアップの内容で置き換えますか？')) return;
+          saveRecords(data.records);
+          saveCompletedDates(data.completedDates);
+          localStorage.setItem(METRICS_KEY, JSON.stringify(data.bodyMetrics));
+          renderRecords();
+          renderWeeklySummary();
+          loadMetricValues();
+          renderStorageSummary();
+          backupStatus.textContent = 'バックアップを復元しました。';
+        } catch (error) {
+          backupStatus.textContent = '読み込めるバックアップ形式ではありません。';
+        } finally {
+          importDataInput.value = '';
+        }
+      });
+
+      clearDataButton.addEventListener('click', () => {
+        if (!confirm('トレーニング記録と身体データをすべて削除します。この操作は戻せません。')) return;
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(COMPLETED_DATES_KEY);
+        localStorage.removeItem(METRICS_KEY);
+        renderRecords();
+        renderWeeklySummary();
+        loadMetricValues();
+        renderStorageSummary();
+        backupStatus.textContent = 'すべてのデータを削除しました。';
+      });
+
+      function getMetricValues() {
+        return {
+          date: document.getElementById('metric-date').value,
+          values: Object.fromEntries([...metricsForm.querySelectorAll('input[type="number"]')].map((input) => [input.id, Number(input.value)]))
+        };
+      }
+
+      function getMetricHistory() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(METRICS_KEY) || '[]');
+          if (Array.isArray(saved)) return saved.filter((entry) => entry?.date && entry?.values);
+          if (saved && saved.values) return [saved];
+          const legacyValues = Object.fromEntries(Object.entries(saved || {}).filter(([id]) => id.startsWith('metric-')).map(([id, value]) => [id, Number(value)]));
+          return Object.keys(legacyValues).length ? [{ date: new Date().toISOString().slice(0, 10), values: legacyValues }] : [];
+        } catch (error) {
+          return [];
+        }
+      }
+
+      async function loadMetricValues() {
+        if (isSupabaseConfigured()) {
+          const supabaseHistory = await fetchMetricHistoryFromSupabase();
+          if (supabaseHistory.length) {
+            localStorage.setItem(METRICS_KEY, JSON.stringify(supabaseHistory));
+          }
+        }
+
+        const history = getMetricHistory().sort((a, b) => b.date.localeCompare(a.date));
+        const latest = history[0];
+        if (!latest) {
+          renderMetricsAnalysis([]);
+          return;
+        }
+        document.getElementById('metric-date').value = latest.date;
+        Object.entries(latest.values).forEach(([id, value]) => {
+            const input = document.getElementById(id);
+            if (input) input.value = value;
+        });
+        metricsStatus.textContent = '保存済みの身体データを表示しています。';
+        renderMetricsAnalysis(history);
+      }
+
+      function renderMetricsAnalysis(history) {
+        const latest = history[0];
+        if (!latest) {
+          metricsSummary.innerHTML = '<div class="empty">測定結果を保存すると分析が表示されます。</div>';
+          metricsChart.innerHTML = '';
+          metricsHistory.innerHTML = '';
+          return;
+        }
+
+        const previous = history[1];
+        const cards = [
+          ['体重', 'metric-weight', 'kg'],
+          ['体脂肪率', 'metric-body-fat', '%'],
+          ['筋肉量', 'metric-muscle', 'kg']
+        ];
+        metricsSummary.innerHTML = cards.map(([label, id, unit]) => {
+          const current = Number(latest.values[id]) || 0;
+          const before = previous ? Number(previous.values[id]) || 0 : null;
+          const change = before === null ? '初回測定' : `${current - before >= 0 ? '+' : ''}${(current - before).toFixed(1)}${unit}`;
+          return `<div class="trend-card"><strong>${label} ${current}${unit}</strong><span>前回比: ${change}</span></div>`;
+        }).join('');
+
+        const chartItems = [
+          ['体重', 'metric-weight', 'kg'],
+          ['体脂肪率', 'metric-body-fat', '%'],
+          ['筋肉量', 'metric-muscle', 'kg']
+        ];
+        const orderedHistory = [...history].sort((a, b) => a.date.localeCompare(b.date));
+        metricsChart.innerHTML = chartItems.map(([label, id, unit]) => {
+          const values = orderedHistory.map((entry) => Number(entry.values[id]) || 0);
+          const min = Math.min(...values);
+          const max = Math.max(...values, min + 1);
+          const width = 300;
+          const height = 120;
+          const points = values.map((value, index) => {
+            const x = values.length === 1 ? width / 2 : 12 + (index / (values.length - 1)) * (width - 24);
+            const y = 12 + (1 - ((value - min) / (max - min))) * (height - 24);
+            return { x, y, value, date: orderedHistory[index].date.slice(5) };
+          });
+          const path = points.map((point, index) => `${index ? 'L' : 'M'} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(' ');
+          const pointMarkup = points.map((point) => `<circle class="line-chart-point" cx="${point.x}" cy="${point.y}" r="4"><title>${point.date}: ${point.value}${unit}</title></circle>`).join('');
+          const labels = points.map((point) => `<text class="line-chart-text" x="${point.x}" y="${height + 12}" text-anchor="middle">${point.date}</text>`).join('');
+          return `
+            <div class="line-chart-card">
+              <strong>${label}</strong>
+              <svg class="line-chart" viewBox="0 0 ${width} ${height + 22}" role="img" aria-label="${label}の推移">
+                <line class="line-chart-grid" x1="12" y1="12" x2="${width - 12}" y2="12"></line>
+                <line class="line-chart-grid" x1="12" y1="${height / 2}" x2="${width - 12}" y2="${height / 2}"></line>
+                <line class="line-chart-grid" x1="12" y1="${height - 12}" x2="${width - 12}" y2="${height - 12}"></line>
+                <path class="line-chart-path" d="${path}"></path>
+                ${pointMarkup}
+                ${labels}
+              </svg>
+              <span class="field-hint">最新: ${Number(latest.values[id]) || 0}${unit}</span>
+            </div>
+          `;
+        }).join('');
+
+        metricsHistory.innerHTML = history.map((entry) => `<div class="history-row"><strong>${entry.date}</strong><span>体重 ${entry.values['metric-weight'] || '-'}kg</span><span>体脂肪 ${entry.values['metric-body-fat'] || '-'}%</span><span>筋肉 ${entry.values['metric-muscle'] || '-'}kg</span></div>`).join('');
+      }
+
+      metricsImageInput.addEventListener('change', () => {
+        const [file] = metricsImageInput.files || [];
+        if (!file) return;
+        metricsImagePreview.src = URL.createObjectURL(file);
+        metricsImagePreview.classList.add('visible');
+        metricsImageStatus.textContent = `${file.name}を読み込みました。数値を確認して保存してください。`;
+      });
+
+      metricsForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const entry = getMetricValues();
+        const history = getMetricHistory().filter((savedEntry) => savedEntry.date !== entry.date);
+        history.push(entry);
+        history.sort((a, b) => b.date.localeCompare(a.date));
+        localStorage.setItem(METRICS_KEY, JSON.stringify(history));
+        if (isSupabaseConfigured()) {
+          await persistMetricHistory(history);
+        }
+        renderMetricsAnalysis(history);
+        metricsStatus.textContent = '身体データを保存しました。';
+      });
+
+      function formatRestTime(totalSeconds) {
+        const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+        const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+        return `${minutes}:${seconds}`;
+      }
+
+      function stopRestTimer(setIndex) {
+        const timer = restTimers.get(setIndex);
+        if (!timer) return;
+        clearInterval(timer.interval);
+        restTimers.delete(setIndex);
+        const setEntry = document.querySelector(`[data-set-index="${setIndex}"]`);
+        if (!setEntry) return;
+        setEntry.querySelector('.set-rest-timer').classList.remove('visible');
+        setEntry.querySelector('.set-rest-start').textContent = 'スタート';
+      }
+
+      function startRestTimer(setIndex) {
+        stopRestTimer(setIndex);
+        const setEntry = document.querySelector(`[data-set-index="${setIndex}"]`);
+        if (!setEntry) return;
+        const restSelect = setEntry.querySelector('[name="setRestTime"]');
+        const timerDisplay = setEntry.querySelector('.set-rest-countdown');
+        const timerLabel = setEntry.querySelector('.set-rest-timer-label');
+        const timerBox = setEntry.querySelector('.set-rest-timer');
+        let remaining = Number(restSelect.value) || 60;
+        timerBox.classList.add('visible');
+        timerDisplay.textContent = formatRestTime(remaining);
+        timerLabel.textContent = '休憩中';
+        setEntry.querySelector('.set-rest-start').textContent = '再開';
+        const interval = setInterval(() => {
+          remaining -= 1;
+          timerDisplay.textContent = formatRestTime(Math.max(remaining, 0));
+          if (remaining <= 0) {
+            stopRestTimer(setIndex);
+            timerBox.classList.add('visible');
+            timerDisplay.textContent = '00:00';
+            timerLabel.textContent = '休憩終了。次のセットへ';
+          }
+        }, 1000);
+        restTimers.set(setIndex, { interval });
+      }
+
+      setFields.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const setEntry = target.closest('.set-entry');
+        if (!setEntry) return;
+        const setIndex = setEntry.dataset.setIndex;
+        if (target.closest('.set-rest-start')) startRestTimer(setIndex);
+        if (target.closest('.set-rest-stop')) stopRestTimer(setIndex);
+      });
+
+      setFields.addEventListener('change', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLSelectElement) || target.name !== 'setWeightType') return;
+        const setEntry = target.closest('.set-entry');
+        const weightInput = setEntry?.querySelector('[name="setWeight"]');
+        if (!weightInput) return;
+        const isBodyweight = target.value === 'bodyweight';
+        weightInput.disabled = isBodyweight;
+        weightInput.required = !isBodyweight;
+        if (isBodyweight) weightInput.value = '';
+      });
+
+      function getCompletedDates() {
+        try {
+          return JSON.parse(localStorage.getItem(COMPLETED_DATES_KEY) || '[]');
+        } catch (error) {
+          return [];
+        }
+      }
+
+      function saveCompletedDates(dates) {
+        localStorage.setItem(COMPLETED_DATES_KEY, JSON.stringify(dates));
+      }
+
+      function getRecordsForDate(date) {
+        return getRecords().filter((record) => record.date === date);
+      }
+
+      function renderDaySummary() {
+        const date = dateInput.value;
+        const records = date ? getRecordsForDate(date) : [];
+        const summaryBox = document.getElementById('day-summary-box');
+        const completed = date && getCompletedDates().includes(date);
+
+        if (!date) {
+          summaryBox.innerHTML = '<h3>今日の記録状況</h3><p>日付を選択してください。</p>';
+          return;
+        }
+
+        if (!records.length) {
+          summaryBox.innerHTML = '<h3>今日の記録状況</h3><p>まだ種目がありません。</p>';
+          return;
+        }
+
+        const totalWeight = records.reduce((total, record) => total + (Number(record.totalWeight) || 0), 0);
+        const exerciseNames = records.map((record) => record.workout).join(' / ');
+        const categories = [...new Set(records.flatMap((record) => Array.isArray(record.category) ? record.category : [record.category]).filter(Boolean))];
+
+        summaryBox.innerHTML = `
+          <h3>${completed ? '今日の記録完了' : '今日の記録状況'}</h3>
+          <p><strong>種目:</strong> ${exerciseNames}</p>
+          <p><strong>カテゴリ:</strong> ${categories.length ? categories.join(' / ') : '未分類'}</p>
+          <p><strong>総セット数:</strong> ${records.reduce((sum, record) => sum + (record.setDetails?.length || 0), 0)}セット</p>
+          <p><strong>総重量:</strong> ${totalWeight}kg</p>
+        `;
+      }
+
+      function updateDayStatus() {
+        const date = dateInput.value;
+        const completed = date && getCompletedDates().includes(date);
+        const dayRecords = date ? getRecordsForDate(date) : [];
+
+        submitButton.disabled = completed && !editingRecordId;
+        finishDayButton.disabled = !date || completed || dayRecords.length === 0;
+        dayStatus.textContent = completed
+          ? `${formatDate(date)}のトレーニングは記録済みです。`
+          : dayRecords.length
+            ? '記録を追加すると、同じ日に続けて種目を登録できます。'
+            : '記録を追加すると、同じ日に続けて種目を登録できます。';
+        renderDaySummary();
+      }
+
+      function renderSetFields() {
+        const setCount = Number(setsSelect.value) || 0;
+
+        if (!setCount) {
+          setFields.innerHTML = '<p class="field-hint">セット数を選ぶと、セットごとの重量と回数を入力できます。</p>';
+          return;
+        }
+
+        setFields.innerHTML = Array.from({ length: setCount }, (_, index) => `
+          <div class="set-entry" data-set-index="${index}">
+            <div class="set-label">${index + 1}セット目</div>
+            <div class="inline-grid">
+              <div class="field">
+                <label for="set-weight-${index}">重量（kg）</label>
+                <select id="set-weight-type-${index}" name="setWeightType" aria-label="重量の種類">
+                  <option value="kg" selected>重量（kg）</option>
+                  <option value="bodyweight">自重</option>
+                </select>
+                <input id="set-weight-${index}" name="setWeight" type="number" step="0.5" min="0" placeholder="例: 60" required />
+              </div>
+              <div class="field">
+                <label for="set-reps-${index}">回数</label>
+                <input id="set-reps-${index}" name="setReps" type="number" min="1" placeholder="例: 10" required />
+              </div>
+            </div>
+            <div class="set-rest-control">
+              <div class="field">
+                <label for="set-rest-${index}">このセット後のレスト</label>
+                <select id="set-rest-${index}" name="setRestTime">
+                  <option value="30">30秒</option>
+                  <option value="60" selected>60秒</option>
+                  <option value="90">90秒</option>
+                  <option value="120">2分</option>
+                  <option value="180">3分</option>
+                  <option value="240">4分</option>
+                  <option value="300">5分</option>
+                </select>
+              </div>
+              <button class="rest-start set-rest-start" type="button">スタート</button>
+              <button class="rest-stop set-rest-stop" type="button">ストップ</button>
+              <div class="set-rest-timer" aria-live="polite">
+                <strong class="set-rest-countdown">01:00</strong>
+                <span class="set-rest-timer-label">休憩待機中</span>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      function resetEditMode() {
+        editingRecordId = null;
+        submitButton.textContent = '種目を追加';
+        cancelEditButton.hidden = true;
+        form.reset();
+        renderSetFields();
+        dateInput.valueAsDate = new Date();
+        updateDayStatus();
+      }
+
+      function startEditingRecord(record) {
+        editingRecordId = record.id;
+        dateInput.value = record.date;
+        form.querySelectorAll('input[name="category"]').forEach((input) => {
+          input.checked = Array.isArray(record.category) && record.category.includes(input.value);
+        });
+        document.getElementById('workout').value = record.workout || '';
+        document.getElementById('intensity').value = record.intensity || '軽め';
+        document.getElementById('notes').value = record.notes || '';
+        setsSelect.value = String(record.setDetails?.length || record.sets || '');
+        renderSetFields();
+        (record.setDetails || []).forEach((set, index) => {
+          const weightInput = document.getElementById(`set-weight-${index}`);
+          const weightTypeInput = document.getElementById(`set-weight-type-${index}`);
+          const repsInput = document.getElementById(`set-reps-${index}`);
+          const restInput = document.getElementById(`set-rest-${index}`);
+          if (weightInput) weightInput.value = set.weight ?? '';
+          if (weightTypeInput) {
+            weightTypeInput.value = set.weight === '自重' ? 'bodyweight' : 'kg';
+            weightInput.disabled = set.weight === '自重';
+            weightInput.required = set.weight !== '自重';
+          }
+          if (repsInput) repsInput.value = set.reps ?? '';
+          if (restInput) restInput.value = String(set.restTime || 60);
+        });
+        submitButton.textContent = '記録を更新';
+        cancelEditButton.hidden = false;
+        updateDayStatus();
+        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      function createRecordId() {
+        return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+      }
+
+      function getRecords() {
+        try {
+          const records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+          return records.map((record) => ({
+            ...record,
+            id: record.id || createRecordId()
+          }));
+        } catch (error) {
+          return [];
+        }
+      }
+
+      function saveRecords(records) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(records.map((record) => ({
+          ...record,
+          id: record.id || createRecordId()
+        }))));
+      }
+
+      function formatDate(dateStr) {
+        const date = new Date(dateStr + 'T00:00:00');
+        return new Intl.DateTimeFormat('ja-JP', {
+          month: 'short',
+          day: 'numeric'
+        }).format(date);
+      }
+
+      function renderStats(records) {
+        const workoutCount = new Set(records.map(item => item.workout)).size;
+        const totalSessions = records.length;
+
+        const statsData = [
+          { label: 'セッション数', value: `${totalSessions}` },
+          { label: '種目数', value: `${workoutCount}` },
+          { label: '最終記録', value: records.length ? formatDate(records[0].date) : 'なし' },
+          { label: '今月', value: records.filter(item => item.date.startsWith(new Date().toISOString().slice(0, 7))).length + '回' }
+        ];
+
+        stats.innerHTML = statsData.map(item => `
+          <div class="stat-card">
+            <div class="stat-label">${item.label}</div>
+            <div class="stat-value">${item.value}</div>
+          </div>
+        `).join('');
+      }
+
+      function getWeekDates() {
+        const today = new Date();
+        const currentDay = today.getDay();
+        const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() + mondayOffset);
+        weekStart.setHours(0, 0, 0, 0);
+
+        return Array.from({ length: 7 }, (_, index) => {
+          const date = new Date(weekStart);
+          date.setDate(weekStart.getDate() + index);
+          return date.toISOString().slice(0, 10);
+        });
+      }
+
+      function getWeekRecords(records = getRecords()) {
+        const weekDates = new Set(getWeekDates());
+        return records.filter((record) => weekDates.has(record.date));
+      }
+
+      function formatSetWeight(weight) {
+        return weight === '自重' ? '自重' : `${weight}kg`;
+      }
+
+      function renderWeeklySummary() {
+        const weekRecords = getWeekRecords();
+        const weekSummaryGrid = document.getElementById('week-summary-grid');
+        const weekChart = document.getElementById('week-chart');
+        const monthCompare = document.getElementById('month-compare');
+        const segmentChart = document.getElementById('segment-chart');
+
+        if (!weekSummaryGrid || !weekChart || !monthCompare || !segmentChart) return;
+
+        const totalWeight = weekRecords.reduce((sum, record) => sum + (Number(record.totalWeight) || 0), 0);
+        const totalSets = weekRecords.reduce((sum, record) => sum + (record.setDetails?.length || 0), 0);
+        const trainingDays = new Set(weekRecords.map((record) => record.date)).size;
+
+        const categoryCounts = {};
+        weekRecords.forEach((record) => {
+          const categories = Array.isArray(record.category) ? record.category : [record.category].filter(Boolean);
+          categories.forEach((category) => {
+            categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+          });
+        });
+
+        const mainCategory = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0];
+
+        const summaryItems = [
+          { label: 'セッション数', value: `${trainingDays}日` },
+          { label: '総重量', value: `${totalWeight}kg` },
+          { label: '総セット数', value: `${totalSets}セット` },
+          { label: '主な部位', value: mainCategory ? mainCategory[0] : '未記録' }
+        ];
+
+        weekSummaryGrid.innerHTML = summaryItems.map((item) => `
+          <div class="stat-card">
+            <div class="stat-label">${item.label}</div>
+            <div class="stat-value">${item.value}</div>
+          </div>
+        `).join('');
+
+        const dateRecords = getWeekDates().map((date) => ({
+          date,
+          total: getRecords().filter((record) => record.date === date).reduce((sum, record) => sum + (Number(record.totalWeight) || 0), 0)
+        }));
+
+        const maxValue = Math.max(...dateRecords.map((day) => day.total), 1);
+
+        weekChart.innerHTML = dateRecords.map((day) => {
+          const height = Math.max((day.total / maxValue) * 100, day.total > 0 ? 18 : 8);
+          return `
+            <div class="chart-column">
+              <div class="chart-value">${day.total || 0}kg</div>
+              <div class="chart-bar-wrap">
+                <div class="chart-bar" style="height:${height}%"></div>
+              </div>
+              <div class="chart-label">${new Date(day.date + 'T00:00:00').toLocaleDateString('ja-JP', { weekday: 'short' })}</div>
+            </div>
+          `;
+        }).join('');
+
+        const allRecords = getRecords();
+        const monthMap = {};
+        allRecords.forEach((record) => {
+          const monthKey = record.date.slice(0, 7);
+          monthMap[monthKey] = (monthMap[monthKey] || 0) + (Number(record.totalWeight) || 0);
+        });
+
+        const months = Object.entries(monthMap).sort((a, b) => a[0].localeCompare(b[0])).slice(-6);
+        if (!months.length) {
+          monthCompare.innerHTML = '<div class="month-item"><strong>記録なし</strong><span>まだ月間データがありません</span><div class="month-bar-wrap"><div class="month-bar" style="width: 12%"></div></div></div>';
+        } else {
+          const maxMonthWeight = Math.max(...months.map(([, weight]) => weight), 1);
+          monthCompare.innerHTML = months.map(([month, weight]) => `
+            <div class="month-item">
+              <strong>${month.replace('-', '年')}月</strong>
+              <span>${weight}kg</span>
+              <div class="month-bar-wrap">
+                <div class="month-bar" style="width:${Math.max((weight / maxMonthWeight) * 100, 12)}%"></div>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        const weeklyCategoryMap = {};
+        weekRecords.forEach((record) => {
+          const categories = Array.isArray(record.category) ? record.category : [record.category].filter(Boolean);
+          categories.forEach((category) => {
+            weeklyCategoryMap[category] = (weeklyCategoryMap[category] || 0) + (Number(record.totalWeight) || 0);
+          });
+        });
+
+        const segmentEntries = Object.entries(weeklyCategoryMap).sort((a, b) => b[1] - a[1]);
+        const maxSegmentWeight = Math.max(...segmentEntries.map(([, weight]) => weight), 1);
+
+        segmentChart.innerHTML = (segmentEntries.length ? segmentEntries : [['未記録', 0]]).map(([label, weight]) => {
+          const colorMap = {
+            胸: '#ef4444',
+            腕: '#f59e0b',
+            肩: '#a78bfa',
+            背中: '#3b82f6',
+            脚: '#22c55e',
+            腹筋: '#f472b6'
+          };
+
+          return `
+            <div class="segment-card">
+              <strong>${label}</strong>
+              <span>${weight}kg</span>
+              <div class="segment-bar-wrap">
+                <div class="segment-bar" style="width:${Math.max((weight / maxSegmentWeight) * 100, 12)}%; background:${colorMap[label] || '#94a3b8'};"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function buildDailySummary(date, records) {
+        const allCategories = new Set();
+        let totalWeight = 0;
+
+        records.forEach((record) => {
+          const categories = Array.isArray(record.category) ? record.category : [record.category || '未分類'];
+          categories.forEach((category) => category && allCategories.add(category));
+          totalWeight += Number(record.totalWeight || 0);
+        });
+
+        const menuItems = records.map((record) => record.workout).filter(Boolean);
+        const menuText = menuItems.length ? menuItems.join(' / ') : '未記録';
+        const summaryEntries = records.map((record, index) => {
+          const setLines = (record.setDetails || []).map((set, setIndex) => `${setIndex + 1}セット目: ${formatSetWeight(set.weight)} / ${set.reps}回`).join('\n');
+          return [
+            `${index + 1}. ${record.workout}`,
+            `  強度: ${record.intensity || '未設定'}`,
+            setLines ? `  セット内容:\n${setLines}` : '  セット内容: 未記録',
+            record.notes ? `  メモ: ${record.notes}` : null
+          ].filter(Boolean).join('\n');
+        }).join('\n\n');
+
+        return {
+          date,
+          category: [...allCategories],
+          workout: menuText,
+          intensity: records.length ? records[0].intensity : '未設定',
+          totalWeight,
+          notes: records.map((record) => record.notes).filter(Boolean).join('\n'),
+          entries: records,
+          summaryEntries
+        };
+      }
+
+      function buildCalendarUrl(summary) {
+        const startDate = summary.date;
+        const endDate = new Date(startDate + 'T00:00:00');
+        endDate.setDate(endDate.getDate() + 1);
+
+        const formatGoogleDate = (date) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}${month}${day}`;
+        };
+
+        const start = formatGoogleDate(new Date(startDate + 'T00:00:00'));
+        const end = formatGoogleDate(endDate);
+        const title = 'トレーニング記録';
+        const categoriesText = summary.category?.length ? summary.category.join(' / ') : '未分類';
+        const detailsText = [
+          `カテゴリ: ${categoriesText}`,
+          `メニュー内容: ${summary.workout}`,
+          summary.summaryEntries ? `セット内容:\n${summary.summaryEntries}` : null,
+          summary.totalWeight ? `総重量: ${summary.totalWeight}kg` : null,
+          summary.notes ? `メモ: ${summary.notes}` : null
+        ].filter(Boolean).join('\n');
+
+        return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${start}/${end}&details=${encodeURIComponent(detailsText)}`;
+      }
+
+      function buildKeepText(summary) {
+        return [
+          'タイトル: トレーニング記録',
+          `日付: ${summary.date}`,
+          `カテゴリ: ${summary.category?.length ? summary.category.join(' / ') : '未分類'}`,
+          `メニュー内容: ${summary.workout}`,
+          summary.summaryEntries ? `セット内容:\n${summary.summaryEntries}` : null,
+          summary.totalWeight ? `総重量: ${summary.totalWeight}kg` : null,
+          summary.notes ? `メモ: ${summary.notes}` : null,
+          '- 追加元: Training Log'
+        ].filter(Boolean).join('\n');
+      }
+
+      async function copyToClipboard(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (error) {
+          return false;
+        }
+      }
+
+      function getSelectedDaySummary() {
+        const date = dateInput.value;
+        if (!date) {
+          return null;
+        }
+
+        const records = getRecordsForDate(date);
+        if (!records.length) {
+          return null;
+        }
+
+        return buildDailySummary(date, records);
+      }
+
+      async function syncToGoogle(summary) {
+        if (!syncGoogleCheckbox.checked || !summary) {
+          return;
+        }
+
+        const keepText = buildKeepText(summary);
+        const keepUrl = 'https://keep.google.com/';
+        const calendarUrl = buildCalendarUrl(summary);
+
+        const calendarWindow = window.open(calendarUrl, '_blank', 'noopener,noreferrer');
+        const keepWindow = window.open(keepUrl, '_blank', 'noopener,noreferrer');
+
+        const copied = await copyToClipboard(keepText);
+
+        if (!calendarWindow || !keepWindow) {
+          dayStatus.textContent = 'ポップアップがブロックされたため、ブラウザのポップアップ設定をオンにしてください。';
+          return;
+        }
+
+        if (!copied) {
+          dayStatus.textContent = 'Google Keep に貼り付ける内容をコピーできませんでした。下記の内容を手動で貼り付けてください。';
+          window.prompt('Google Keep に貼り付ける内容をコピーしてください。', keepText);
+          return;
+        }
+
+        dayStatus.textContent = `${formatDate(summary.date)}の記録を Google Calendar / Keep に共有しました。`;
+      }
+
+      function renderRecords() {
+        const records = getRecords().sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        if (!records.length) {
+          recordList.innerHTML = '<div class="empty">まだ記録がありません。最初のトレーニングを追加してください。</div>';
+          renderStats([]);
+          return;
+        }
+
+        const grouped = {};
+        records.forEach((record) => {
+          grouped[record.date] ??= [];
+          grouped[record.date].push(record);
+        });
+
+        const groupedHtml = Object.entries(grouped).map(([date, dayRecords]) => {
+          const totalWeight = dayRecords.reduce((sum, record) => sum + (Number(record.totalWeight) || 0), 0);
+          const totalSets = dayRecords.reduce((sum, record) => sum + (record.setDetails?.length || 0), 0);
+          const items = dayRecords.map((record) => {
+            const categories = Array.isArray(record.category) ? record.category : [record.category || '未分類'];
+            const categoryBadges = categories.map(category => {
+              const className = {
+                '胸': 'chest',
+                '腕': 'arm',
+                '肩': 'shoulder',
+                '背中': 'back',
+                '脚': 'leg',
+                '腹筋': 'abs'
+              }[category] || 'chest';
+
+              return `<span class="badge ${className}">${category}</span>`;
+            }).join('');
+
+            return `
+              <div class="record-item">
+                <div class="record-top">
+                  <div class="record-title">${record.workout}</div>
+                  <div>${categoryBadges}</div>
+                </div>
+                <div class="record-meta">
+                  <span>${formatDate(record.date)}</span>
+                  <span>${record.intensity}</span>
+                  <span>${record.setDetails?.length || record.sets ? `${record.setDetails?.length || record.sets}セット` : 'セット数未記入'}</span>
+                  <span>レスト: ${(record.setDetails || []).map((set) => formatRestTime(Number(set.restTime || record.restTime || 60))).join(' / ') || '01:00'}</span>
+                  <span>${record.totalWeight ? `総重量: ${record.totalWeight}kg` : '総重量: 0kg'}</span>
+                </div>
+                ${record.setDetails?.length ? `<div class="set-summary">${record.setDetails.map((set, setIndex) => `<span>${setIndex + 1}セット目: ${formatSetWeight(set.weight)} × ${set.reps}回</span>`).join('')}</div>` : ''}
+                <div class="record-notes">${record.notes ? record.notes : 'メモなし'}</div>
+                <div style="margin-top: 14px; display: flex; justify-content: flex-end;">
+                  <button class="secondary edit-btn" data-record-id="${record.id}" type="button">編集</button>
+                  <button class="delete-btn" data-record-id="${record.id}" type="button">削除</button>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          return `
+            <div style="margin-bottom: 18px; border: 1px solid var(--border); border-radius: 16px; padding: 12px; background: #f8fafc;">
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px;">
+                <strong>${formatDate(date)}</strong>
+                <span style="font-size:0.8rem; color: var(--muted);">${totalSets}セット / ${totalWeight}kg</span>
+              </div>
+              ${items}
+            </div>
+          `;
+        }).join('');
+
+        recordList.innerHTML = groupedHtml;
+        renderStats(records);
+      }
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const formData = new FormData(form);
+        const categories = formData.getAll('category');
+        const sets = formData.get('sets') ? Number(formData.get('sets')) : 0;
+        const setDetails = [...setFields.querySelectorAll('.set-entry')].map((setEntry) => {
+          const weightType = setEntry.querySelector('[name="setWeightType"]').value;
+          const weightValue = Number(setEntry.querySelector('[name="setWeight"]').value) || 0;
+          const reps = Number(setEntry.querySelector('[name="setReps"]').value) || 0;
+          const restTime = Number(setEntry.querySelector('[name="setRestTime"]').value) || 60;
+          return {
+            weight: weightType === 'bodyweight' ? '自重' : weightValue,
+            reps,
+            restTime
+          };
+        });
+        const totalWeight = setDetails.reduce((total, set) => total + (typeof set.weight === 'number' ? set.weight * set.reps : 0), 0);
+
+        const record = {
+          id: editingRecordId || createRecordId(),
+          date: formData.get('date'),
+          category: categories,
+          workout: formData.get('workout').toString().trim(),
+          intensity: formData.get('intensity').toString(),
+          sets,
+          setDetails,
+          totalWeight,
+          notes: formData.get('notes').toString().trim()
+        };
+
+        if (!record.date || !record.workout || !record.category.length) {
+          alert('日付・カテゴリ・種目は必須です。');
+          return;
+        }
+
+        const records = getRecords();
+        const recordIndex = records.findIndex((savedRecord) => savedRecord.id === editingRecordId);
+        if (recordIndex >= 0) {
+          records[recordIndex] = record;
+        } else {
+          records.push(record);
+        }
+        saveRecords(records);
+        if (isSupabaseConfigured()) {
+          await persistWorkoutRecord(record);
+        }
+        const selectedDate = record.date;
+        editingRecordId = null;
+        form.reset();
+        restTimers.forEach((timer) => clearInterval(timer.interval));
+        restTimers.clear();
+        dateInput.value = selectedDate;
+        syncGoogleCheckbox.checked = true;
+        submitButton.textContent = '種目を追加';
+        cancelEditButton.hidden = true;
+        renderSetFields();
+        updateDayStatus();
+        renderRecords();
+      });
+
+      setsSelect.addEventListener('change', renderSetFields);
+      cancelEditButton.addEventListener('click', resetEditMode);
+      dateInput.addEventListener('change', () => {
+        renderSetFields();
+        updateDayStatus();
+      });
+
+      finishDayButton.addEventListener('click', async () => {
+        const date = dateInput.value;
+        if (!date) {
+          alert('日付を選択してください。');
+          return;
+        }
+
+        const records = getRecordsForDate(date);
+        if (!records.length) {
+          alert('本日のトレーニング記録がありません。');
+          return;
+        }
+
+        const summary = buildDailySummary(date, records);
+        const dates = getCompletedDates();
+        if (!dates.includes(date)) {
+          dates.push(date);
+          saveCompletedDates(dates);
+        }
+
+        updateDayStatus();
+        await syncToGoogle(summary);
+      });
+
+      calendarShareButton.addEventListener('click', async () => {
+        const summary = getSelectedDaySummary();
+        if (!summary) {
+          dayStatus.textContent = '共有する記録がありません。先に種目を追加してください。';
+          return;
+        }
+
+        const url = buildCalendarUrl(summary);
+        const calendarWindow = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!calendarWindow) {
+          dayStatus.textContent = 'Google Calendarを開けませんでした。ポップアップを許可してください。';
+          return;
+        }
+        dayStatus.textContent = `${formatDate(summary.date)}の内容を Google Calendar で確認できます。`;
+      });
+
+      keepShareButton.addEventListener('click', async () => {
+        const summary = getSelectedDaySummary();
+        if (!summary) {
+          dayStatus.textContent = '共有する記録がありません。先に種目を追加してください。';
+          return;
+        }
+
+        const text = buildKeepText(summary);
+        const keepWindow = window.open('https://keep.google.com/', '_blank', 'noopener,noreferrer');
+        const copied = await copyToClipboard(text);
+
+        if (!keepWindow) {
+          dayStatus.textContent = 'Google Keep を開けませんでした。ポップアップを許可してください。';
+          return;
+        }
+
+        if (!copied) {
+          dayStatus.textContent = '記録内容をクリップボードへコピーできませんでした。Keep で手動で貼り付けてください。';
+          window.prompt('Google Keep に貼り付ける内容をコピーしてください。', text);
+          return;
+        }
+
+        dayStatus.textContent = `${formatDate(summary.date)}の内容を Google Keep に転送しました。`;
+      });
+
+      recordList.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+
+        const deleteButton = target.closest('.delete-btn');
+        const editButton = target.closest('.edit-btn');
+        if (editButton) {
+          const record = getRecords().find((savedRecord) => savedRecord.id === editButton.dataset.recordId);
+          if (record) startEditingRecord(record);
+          return;
+        }
+        if (!deleteButton) return;
+
+        const recordId = deleteButton.dataset.recordId;
+        const records = getRecords().filter((record) => record.id !== recordId);
+        saveRecords(records);
+        renderRecords();
+        updateDayStatus();
+      });
+
+      async function initializeDataLayer() {
+        loadSupabaseConfigInputs();
+        if (isSupabaseConfigured()) {
+          await syncSupabaseToLocal();
+        }
+        renderStorageSummary();
+      }
+
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch((error) => {
+            console.warn('PWA service worker registration failed:', error);
+          });
+        });
+      }
+
+      dateInput.valueAsDate = new Date();
+      loadMetricValues();
+      renderStorageSummary();
+      renderSetFields();
+      updateDayStatus();
+      renderRecords();
+      renderWeeklySummary();
+      initializeDataLayer();
+    </script>
+  </body>
+</html>
