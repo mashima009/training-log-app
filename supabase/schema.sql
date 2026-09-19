@@ -66,6 +66,9 @@ begin
 end;
 $$ language plpgsql;
 
+drop trigger if exists workouts_set_updated_at on public.workouts;
+drop trigger if exists body_metrics_set_updated_at on public.body_metrics;
+
 create trigger workouts_set_updated_at
 before update on public.workouts
 for each row
@@ -79,6 +82,10 @@ execute function public.update_updated_at_column();
 alter table public.workouts enable row level security;
 alter table public.workout_sets enable row level security;
 alter table public.body_metrics enable row level security;
+
+drop policy if exists "Allow all access for personal app" on public.workouts;
+drop policy if exists "Allow all access for personal app" on public.workout_sets;
+drop policy if exists "Allow all access for personal app" on public.body_metrics;
 
 create policy "Allow all access for personal app"
 on public.workouts
