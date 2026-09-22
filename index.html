@@ -487,6 +487,33 @@
             font-size: 0.76rem;
           }
 
+          .exercise-analysis {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 12px;
+          }
+
+          .exercise-analysis-card {
+            padding: 15px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: linear-gradient(180deg, rgba(17, 24, 39, 0.9), rgba(15, 23, 42, 0.78));
+          }
+
+          .exercise-analysis-card h3 {
+            margin: 0 0 12px;
+            font-size: 0.98rem;
+          }
+
+          .exercise-analysis-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+          }
+
+          .exercise-analysis-stat strong { display: block; font-size: 1.05rem; }
+          .exercise-analysis-stat span { color: var(--muted); font-size: 0.72rem; }
+
           .segment-bar-wrap {
             width: 100%;
             height: 8px;
@@ -1081,6 +1108,13 @@
           </div>
           <div class="segment-chart" id="segment-chart"></div>
         </section>
+
+        <section class="panel week-summary">
+          <div class="list-header">
+            <h2>種目別分析</h2>
+          </div>
+          <div class="exercise-analysis" id="exercise-analysis"></div>
+        </section>
       </div>
 
       <div class="page" id="metrics-page" hidden>
@@ -1227,6 +1261,7 @@
       const calendarMenu = document.getElementById('calendar-menu');
       const calendarPrevButton = document.getElementById('calendar-prev');
       const calendarNextButton = document.getElementById('calendar-next');
+      const exerciseAnalysis = document.getElementById('exercise-analysis');
       const pageButtons = document.querySelectorAll('[data-page]');
       const pages = document.querySelectorAll('.page');
       const restTimers = new Map();
@@ -2013,6 +2048,53 @@
         renderTrainingCalendar();
       });
 
+      function renderExerciseAnalysis(records) {
+        if (!exerciseAnalysis) return;
+
+        const exerciseMap = new Map();
+        records.forEach((record) => {
+          const workoutName = record.workout || '未設定';
+          if (!exerciseMap.has(workoutName)) exerciseMap.set(workoutName, []);
+          exerciseMap.get(workoutName).push(...(record.setDetails || []));
+        });
+
+        if (!exerciseMap.size) {
+          exerciseAnalysis.innerHTML = '<div class="empty">種目を記録すると、平均重量・平均回数・最高重量が表示されます。</div>';
+          return;
+        }
+
+        exerciseAnalysis.innerHTML = [...exerciseMap.entries()]
+          .sort(([nameA], [nameB]) => nameA.localeCompare(nameB, 'ja'))
+          .map(([workoutName, sets]) => {
+            const numericWeights = sets
+              .map((set) => Number(set.weight))
+              .filter((weight) => Number.isFinite(weight));
+            const reps = sets
+              .map((set) => Number(set.reps))
+              .filter((rep) => Number.isFinite(rep) && rep > 0);
+            const averageWeight = numericWeights.length
+              ? `${(numericWeights.reduce((sum, weight) => sum + weight, 0) / numericWeights.length).toFixed(1)}kg`
+              : '自重のみ';
+            const averageReps = reps.length
+              ? `${(reps.reduce((sum, rep) => sum + rep, 0) / reps.length).toFixed(1)}回`
+              : '-';
+            const maxWeight = numericWeights.length
+              ? `${Math.max(...numericWeights)}kg`
+              : '自重';
+
+            return `
+              <article class="exercise-analysis-card">
+                <h3>${workoutName}</h3>
+                <div class="exercise-analysis-stats">
+                  <div class="exercise-analysis-stat"><strong>${averageWeight}</strong><span>平均重量</span></div>
+                  <div class="exercise-analysis-stat"><strong>${averageReps}</strong><span>平均回数</span></div>
+                  <div class="exercise-analysis-stat"><strong>${maxWeight}</strong><span>最高重量</span></div>
+                </div>
+              </article>
+            `;
+          }).join('');
+      }
+
       function renderWeeklySummary() {
         renderTrainingCalendar();
         const weekRecords = getWeekRecords();
@@ -2020,8 +2102,10 @@
         const weekChart = document.getElementById('week-chart');
         const monthCompare = document.getElementById('month-compare');
         const segmentChart = document.getElementById('segment-chart');
+        const allRecords = getRecords();
 
         if (!weekSummaryGrid || !weekChart || !monthCompare || !segmentChart) return;
+        renderExerciseAnalysis(allRecords);
 
         const totalWeight = weekRecords.reduce((sum, record) => sum + (Number(record.totalWeight) || 0), 0);
         const totalSets = weekRecords.reduce((sum, record) => sum + (record.setDetails?.length || 0), 0);
@@ -2071,7 +2155,6 @@
           `;
         }).join('');
 
-        const allRecords = getRecords();
         const monthMap = {};
         allRecords.forEach((record) => {
           const monthKey = record.date.slice(0, 7);
