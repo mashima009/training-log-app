@@ -83,27 +83,28 @@ alter table public.workouts enable row level security;
 alter table public.workout_sets enable row level security;
 alter table public.body_metrics enable row level security;
 
-drop policy if exists "Users can access their own workouts" on public.workouts;
-drop policy if exists "Users can access their own workout sets" on public.workout_sets;
-drop policy if exists "Users can access their own metrics" on public.body_metrics;
 drop policy if exists "Allow all access for personal app" on public.workouts;
 drop policy if exists "Allow all access for personal app" on public.workout_sets;
 drop policy if exists "Allow all access for personal app" on public.body_metrics;
+drop policy if exists "Users can access their own workouts" on public.workouts;
+drop policy if exists "Users can access their own workout sets" on public.workout_sets;
+drop policy if exists "Users can access their own metrics" on public.body_metrics;
 
-create policy "Users can access their own workouts"
+create policy "Allow all access for personal app"
 on public.workouts
 for all
-using (auth.uid()::text = user_id)
-with check (auth.uid()::text = user_id);
+using (true)
+with check (true);
 
-create policy "Users can access their own workout sets"
+create policy "Allow all access for personal app"
 on public.workout_sets
 for all
-using (auth.uid()::text = user_id)
-with check (auth.uid()::text = user_id);
+using (true)
+with check (true);
 
-create policy "Users can access their own metrics"
+create policy "Allow all access for personal app"
 on public.body_metrics
 for all
-using (auth.uid()::text = user_id)
-with check (auth.uid()::text = user_id);
+using (true)
+with check (true);
+
