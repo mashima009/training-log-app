@@ -269,6 +269,72 @@
           .history-row { display: grid; grid-template-columns: 1fr repeat(3, auto); gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(148, 163, 184, 0.12); color: var(--muted); font-size: 0.82rem; }
           .history-row strong { color: var(--text); }
 
+          .training-calendar {
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(240px, 0.85fr);
+            gap: 20px;
+            align-items: start;
+          }
+
+          .calendar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+          }
+
+          .calendar-header h3 { margin: 0; font-size: 1rem; }
+          .calendar-controls { display: flex; gap: 6px; }
+          .calendar-controls button { padding: 8px 11px; }
+
+          .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 6px;
+          }
+
+          .calendar-weekday {
+            padding: 4px 0;
+            color: var(--muted);
+            font-size: 0.72rem;
+            text-align: center;
+          }
+
+          .calendar-day {
+            min-height: 52px;
+            padding: 7px 5px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: rgba(15, 23, 42, 0.72);
+            color: var(--muted);
+            font-size: 0.8rem;
+            text-align: left;
+          }
+
+          .calendar-day:hover { background: rgba(245, 158, 11, 0.16); }
+          .calendar-day.outside { opacity: 0.35; }
+          .calendar-day.has-record { border-color: rgba(252, 211, 77, 0.58); color: var(--text); }
+          .calendar-day.selected { background: linear-gradient(135deg, rgba(252, 211, 77, 0.9), rgba(249, 115, 22, 0.9)); color: #1c1917; }
+          .calendar-day-number { display: block; font-weight: 700; }
+          .calendar-day-mark { display: block; margin-top: 4px; color: #fbbf24; font-size: 0.68rem; }
+          .calendar-day.selected .calendar-day-mark { color: #7c2d12; }
+
+          .calendar-menu {
+            min-height: 100%;
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: rgba(15, 23, 42, 0.72);
+          }
+
+          .calendar-menu h3 { margin: 0 0 10px; font-size: 1rem; }
+          .calendar-menu-list { display: grid; gap: 10px; }
+          .calendar-menu-item { padding-bottom: 10px; border-bottom: 1px solid rgba(148, 163, 184, 0.14); }
+          .calendar-menu-item:last-child { padding-bottom: 0; border-bottom: 0; }
+          .calendar-menu-item strong { display: block; margin-bottom: 4px; }
+          .calendar-menu-item span { color: var(--muted); font-size: 0.8rem; }
+
           h1 {
             margin: 0;
             font-size: clamp(1.8rem, 2vw, 2.7rem);
@@ -842,6 +908,7 @@
             .set-rest-control .field { grid-column: 1 / -1; }
             .rest-start, .rest-stop { width: 100%; }
             .history-row { grid-template-columns: 1fr 1fr; }
+            .training-calendar { grid-template-columns: 1fr; gap: 14px; }
             input, select, textarea, button { min-height: 46px; font-size: 16px; }
             .page-nav { position: sticky; top: 6px; }
             .page-nav button { min-height: 52px; padding: 10px 8px; }
@@ -973,6 +1040,24 @@
           </div>
           <p class="page-description">週間・月間の負荷と部位別バランスを視覚的に確認します。</p>
         </div>
+        <section class="panel week-summary">
+          <div class="list-header">
+            <h2>トレーニングカレンダー</h2>
+          </div>
+          <div class="training-calendar">
+            <div>
+              <div class="calendar-header">
+                <h3 id="calendar-month-label"></h3>
+                <div class="calendar-controls">
+                  <button class="secondary" id="calendar-prev" type="button" aria-label="前の月">前月</button>
+                  <button class="secondary" id="calendar-next" type="button" aria-label="次の月">次月</button>
+                </div>
+              </div>
+              <div class="calendar-grid" id="training-calendar-grid"></div>
+            </div>
+            <div class="calendar-menu" id="calendar-menu" aria-live="polite"></div>
+          </div>
+        </section>
         <section class="panel week-summary">
           <div class="list-header">
             <h2>今週の統計</h2>
@@ -1137,10 +1222,17 @@
       const metricsSummary = document.getElementById('metrics-summary');
       const metricsChart = document.getElementById('metrics-chart');
       const metricsHistory = document.getElementById('metrics-history');
+      const calendarMonthLabel = document.getElementById('calendar-month-label');
+      const calendarGrid = document.getElementById('training-calendar-grid');
+      const calendarMenu = document.getElementById('calendar-menu');
+      const calendarPrevButton = document.getElementById('calendar-prev');
+      const calendarNextButton = document.getElementById('calendar-next');
       const pageButtons = document.querySelectorAll('[data-page]');
       const pages = document.querySelectorAll('.page');
       const restTimers = new Map();
       let editingRecordId = null;
+      let calendarMonth = new Date();
+      let selectedCalendarDate = '';
       const supabaseForm = document.getElementById('supabase-config-form');
       const supabaseUrlInput = document.getElementById('supabase-url');
       const supabaseAnonKeyInput = document.getElementById('supabase-anon-key');
@@ -1847,7 +1939,76 @@
         return weight === '自重' ? '自重' : `${weight}kg`;
       }
 
+      function getCalendarDateKey(date) {
+        return date.toISOString().slice(0, 10);
+      }
+
+      function renderTrainingCalendar() {
+        if (!calendarMonthLabel || !calendarGrid || !calendarMenu) return;
+
+        const records = getRecords();
+        const recordDates = new Set(records.map((record) => record.date));
+        const year = calendarMonth.getFullYear();
+        const month = calendarMonth.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const startOffset = (firstDay.getDay() + 6) % 7;
+        const gridStart = new Date(year, month, 1 - startOffset);
+        const today = getCalendarDateKey(new Date());
+        const monthLabel = new Intl.DateTimeFormat('ja-JP', { year: 'numeric', month: 'long' }).format(firstDay);
+
+        calendarMonthLabel.textContent = monthLabel;
+        calendarGrid.innerHTML = ['月', '火', '水', '木', '金', '土', '日'].map((weekday) => `<div class="calendar-weekday">${weekday}</div>`).join('');
+
+        Array.from({ length: 42 }, (_, index) => {
+          const date = new Date(gridStart);
+          date.setDate(gridStart.getDate() + index);
+          const dateKey = getCalendarDateKey(date);
+          const dayRecords = records.filter((record) => record.date === dateKey);
+          const isOutside = date.getMonth() !== month;
+          const isSelected = dateKey === selectedCalendarDate;
+          const classes = ['calendar-day'];
+          if (isOutside) classes.push('outside');
+          if (dayRecords.length) classes.push('has-record');
+          if (isSelected) classes.push('selected');
+          const mark = dayRecords.length ? `${dayRecords.length}件` : dateKey === today ? '今日' : '';
+          calendarGrid.insertAdjacentHTML('beforeend', `
+            <button class="${classes.join(' ')}" type="button" data-calendar-date="${dateKey}">
+              <span class="calendar-day-number">${date.getDate()}</span>
+              ${mark ? `<span class="calendar-day-mark">${mark}</span>` : ''}
+            </button>
+          `);
+        });
+
+        renderCalendarMenu(selectedCalendarDate || getCalendarDateKey(new Date()), records);
+      }
+
+      function renderCalendarMenu(date, records = getRecords()) {
+        const dayRecords = records.filter((record) => record.date === date);
+        const label = new Intl.DateTimeFormat('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' }).format(new Date(`${date}T00:00:00`));
+        calendarMenu.innerHTML = dayRecords.length
+          ? `<h3>${label}のメニュー</h3><div class="calendar-menu-list">${dayRecords.map((record) => `<div class="calendar-menu-item"><strong>${record.workout}</strong><span>${record.category?.length ? record.category.join(' / ') : '未分類'} / ${record.setDetails?.length || record.sets || 0}セット / ${record.totalWeight || 0}kg</span></div>`).join('')}</div>`
+          : `<h3>${label}</h3><p class="field-hint">この日に記録されたメニューはありません。</p>`;
+      }
+
+      calendarGrid.addEventListener('click', (event) => {
+        const target = event.target.closest('[data-calendar-date]');
+        if (!target) return;
+        selectedCalendarDate = target.dataset.calendarDate;
+        renderTrainingCalendar();
+      });
+
+      calendarPrevButton.addEventListener('click', () => {
+        calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1);
+        renderTrainingCalendar();
+      });
+
+      calendarNextButton.addEventListener('click', () => {
+        calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1);
+        renderTrainingCalendar();
+      });
+
       function renderWeeklySummary() {
+        renderTrainingCalendar();
         const weekRecords = getWeekRecords();
         const weekSummaryGrid = document.getElementById('week-summary-grid');
         const weekChart = document.getElementById('week-chart');
@@ -2091,6 +2252,7 @@
         if (!records.length) {
           recordList.innerHTML = '<div class="empty">まだ記録がありません。最初のトレーニングを追加してください。</div>';
           renderStats([]);
+          renderWeeklySummary();
           return;
         }
 
@@ -2154,6 +2316,7 @@
 
         recordList.innerHTML = groupedHtml;
         renderStats(records);
+        renderWeeklySummary();
       }
 
       form.addEventListener('submit', async (event) => {
