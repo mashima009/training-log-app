@@ -536,7 +536,6 @@
           .meal-item-title { font-weight: 700; }
           .meal-item-meta { display: flex; flex-wrap: wrap; gap: 8px 14px; color: var(--muted); font-size: 0.82rem; }
           .meal-item-notes { margin-top: 8px; color: #dfe7f4; white-space: pre-wrap; }
-          .meal-photo { display: block; width: 100%; max-height: 240px; margin-top: 10px; border-radius: 10px; object-fit: cover; }
           .meal-share { margin-top: 10px; }
 
           .segment-bar-wrap {
@@ -1162,15 +1161,15 @@
             <p class="page-kicker">NUTRITION LOG</p>
             <h2 class="page-title">食事記録</h2>
           </div>
-          <p class="page-description">食事内容と写真を記録して、あとから見返せるようにします。</p>
+          <p class="page-description">食事内容と時間を記録して、あとから見返せるようにします。</p>
         </div>
         <div class="layout">
           <aside class="panel">
             <form id="meal-form">
               <div class="field"><label for="meal-date">日付</label><input id="meal-date" type="date" required /></div>
+              <div class="inline-grid"><div class="field"><label for="meal-start-time">開始時刻</label><input id="meal-start-time" type="time" required /></div><div class="field"><label for="meal-end-time">終了時刻</label><input id="meal-end-time" type="time" required /></div></div>
               <div class="field"><label for="meal-type">食事区分</label><select id="meal-type"><option>朝食</option><option>昼食</option><option>夕食</option><option>間食</option></select></div>
               <div class="field"><label for="meal-name">内容</label><input id="meal-name" type="text" placeholder="例: 鶏むね肉とご飯" required /></div>
-              <div class="field"><label for="meal-photo">食事の写真</label><input id="meal-photo" type="file" accept="image/*" /><img id="meal-photo-preview" class="meal-photo" alt="食事写真のプレビュー" hidden /></div>
               <div class="field"><label for="meal-notes">メモ</label><textarea id="meal-notes" placeholder="食事のメモや体調"></textarea></div>
               <button class="submit-btn" type="submit" id="meal-submit">食事を追加</button>
               <button class="secondary" type="button" id="meal-cancel" hidden>編集をキャンセル</button>
@@ -1349,10 +1348,10 @@
       const balanceGrid = document.getElementById('balance-grid');
       const mealForm = document.getElementById('meal-form');
       const mealDateInput = document.getElementById('meal-date');
+      const mealStartTimeInput = document.getElementById('meal-start-time');
+      const mealEndTimeInput = document.getElementById('meal-end-time');
       const mealTypeInput = document.getElementById('meal-type');
       const mealNameInput = document.getElementById('meal-name');
-      const mealPhotoInput = document.getElementById('meal-photo');
-      const mealPhotoPreview = document.getElementById('meal-photo-preview');
       const mealNotesInput = document.getElementById('meal-notes');
       const mealSubmitButton = document.getElementById('meal-submit');
       const mealCancelButton = document.getElementById('meal-cancel');
@@ -2131,7 +2130,14 @@
       function getMeals() {
         try {
           const meals = JSON.parse(localStorage.getItem(MEALS_KEY) || '[]');
-          return Array.isArray(meals) ? meals : [];
+          return Array.isArray(meals) ? meals.map((meal) => {
+            const { photo, ...mealWithoutPhoto } = meal;
+            return {
+              ...mealWithoutPhoto,
+              startTime: meal.startTime || '07:00',
+              endTime: meal.endTime || '07:30'
+            };
+          }) : [];
         } catch (error) {
           return [];
         }
@@ -2155,8 +2161,7 @@
 
         mealList.innerHTML = meals.length ? meals.map((meal) => `
           <article class="meal-item">
-            <div class="meal-item-top"><span class="meal-item-title">${meal.mealType} / ${meal.name}</span></div>
-            ${meal.photo ? `<img class="meal-photo" src="${meal.photo}" alt="${meal.name}の食事写真" />` : ''}
+            <div class="meal-item-top"><span class="meal-item-title">${meal.mealType} / ${meal.name}</span><span>${meal.startTime}～${meal.endTime}</span></div>
             ${meal.notes ? `<div class="meal-item-notes">${meal.notes}</div>` : ''}
             <div style="margin-top: 12px; display: flex; justify-content: flex-end; gap: 8px;"><button class="secondary meal-calendar-share meal-calendar-item" data-meal-id="${meal.id}" type="button">カレンダーへ</button><button class="secondary meal-edit-btn" data-meal-id="${meal.id}" type="button">編集</button><button class="delete-btn meal-delete-btn" data-meal-id="${meal.id}" type="button">削除</button></div>
           </article>
@@ -2167,45 +2172,27 @@
         editingMealId = null;
         mealForm.reset();
         mealDateInput.valueAsDate = new Date();
-        mealPhotoPreview.hidden = true;
-        mealPhotoPreview.removeAttribute('src');
+        mealStartTimeInput.value = '07:00';
+        mealEndTimeInput.value = '07:30';
         mealSubmitButton.textContent = '食事を追加';
         mealCancelButton.hidden = true;
         mealStatus.textContent = '食事を記録すると、右側に一覧が表示されます。';
         renderMeals();
       }
 
-      function readPhotoFile(file) {
-        return new Promise((resolve, reject) => {
-          if (!file) return resolve('');
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-      }
-
-      mealPhotoInput.addEventListener('change', () => {
-        const [file] = mealPhotoInput.files || [];
-        if (!file) return;
-        mealPhotoPreview.src = URL.createObjectURL(file);
-        mealPhotoPreview.hidden = false;
-      });
-
       mealForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const existingMeal = editingMealId ? getMeals().find((meal) => meal.id === editingMealId) : null;
-        const selectedPhoto = await readPhotoFile(mealPhotoInput.files?.[0]);
         const meal = {
           id: editingMealId || createRecordId(),
           date: mealDateInput.value,
+          startTime: mealStartTimeInput.value,
+          endTime: mealEndTimeInput.value,
           mealType: mealTypeInput.value,
           name: mealNameInput.value.trim(),
-          photo: selectedPhoto || existingMeal?.photo || '',
           notes: mealNotesInput.value.trim(),
           createdAt: new Date().toISOString()
         };
-        if (!meal.date || !meal.name) return;
+        if (!meal.date || !meal.startTime || !meal.endTime || !meal.name) return;
         const meals = getMeals();
         const index = meals.findIndex((savedMeal) => savedMeal.id === editingMealId);
         if (index >= 0) meals[index] = meal;
@@ -2221,29 +2208,24 @@
       mealCancelButton.addEventListener('click', resetMealForm);
       mealDateInput.addEventListener('change', renderMeals);
 
-      function buildMealCalendarUrl(meals, date) {
-        const startDate = new Date(`${date}T00:00:00`);
-        const endDate = new Date(startDate);
-        endDate.setDate(endDate.getDate() + 1);
-        const formatCalendarDate = (value) => `${value.getFullYear()}${String(value.getMonth() + 1).padStart(2, '0')}${String(value.getDate()).padStart(2, '0')}`;
-        const details = meals.map((meal) => [
-          `${meal.mealType}: ${meal.name}`,
-          meal.notes ? `メモ: ${meal.notes}` : null,
-          meal.photo ? '写真: Training Logに保存されています' : null
-        ].filter(Boolean).join('\n')).join('\n\n');
-        return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('食事記録')}&dates=${formatCalendarDate(startDate)}/${formatCalendarDate(endDate)}&details=${encodeURIComponent(details)}`;
+      function buildMealCalendarUrl(meal) {
+        const formatCalendarDate = (date, time) => `${date.replaceAll('-', '')}T${time.replace(':', '')}00`;
+        const start = formatCalendarDate(meal.date, meal.startTime);
+        const end = formatCalendarDate(meal.date, meal.endTime);
+        const details = [`食事内容: ${meal.name}`, meal.notes ? `メモ: ${meal.notes}` : null].filter(Boolean).join('\n');
+        return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(meal.mealType)}&dates=${start}/${end}&details=${encodeURIComponent(details)}`;
       }
 
-      function openMealsInGoogleCalendar(meals, date) {
-        if (!meals.length) {
+      function openMealInGoogleCalendar(meal) {
+        if (!meal) {
           mealStatus.textContent = '送信する食事記録がありません。';
           return;
         }
-        const calendarWindow = window.open(buildMealCalendarUrl(meals, date), '_blank', 'noopener,noreferrer');
+        const calendarWindow = window.open(buildMealCalendarUrl(meal), '_blank', 'noopener,noreferrer');
         mealStatus.textContent = calendarWindow ? 'Googleカレンダーの予定作成画面を開きました。' : 'ポップアップを許可してGoogleカレンダーを開いてください。';
       }
 
-      mealCalendarShareButton.addEventListener('click', () => openMealsInGoogleCalendar(getMealsForDate(mealDateInput.value), mealDateInput.value));
+      mealCalendarShareButton.addEventListener('click', () => openMealInGoogleCalendar(getMealsForDate(mealDateInput.value)[0]));
       mealList.addEventListener('click', (event) => {
         const target = event.target;
         const editButton = target.closest('.meal-edit-btn');
@@ -2251,7 +2233,7 @@
         const calendarButton = target.closest('.meal-calendar-item');
         if (calendarButton) {
           const meal = getMeals().find((savedMeal) => savedMeal.id === calendarButton.dataset.mealId);
-          if (meal) openMealsInGoogleCalendar([meal], meal.date);
+          if (meal) openMealInGoogleCalendar(meal);
           return;
         }
         if (editButton) {
@@ -2259,10 +2241,10 @@
           if (!meal) return;
           editingMealId = meal.id;
           mealDateInput.value = meal.date;
+          mealStartTimeInput.value = meal.startTime || '07:00';
+          mealEndTimeInput.value = meal.endTime || '07:30';
           mealTypeInput.value = meal.mealType;
           mealNameInput.value = meal.name;
-          mealPhotoPreview.src = meal.photo || '';
-          mealPhotoPreview.hidden = !meal.photo;
           mealNotesInput.value = meal.notes || '';
           mealSubmitButton.textContent = '食事を更新';
           mealCancelButton.hidden = false;
@@ -2983,6 +2965,8 @@
 
       dateInput.valueAsDate = new Date();
       mealDateInput.valueAsDate = new Date();
+      mealStartTimeInput.value = '07:00';
+      mealEndTimeInput.value = '07:30';
       renderExerciseSuggestions();
       renderMeals();
       loadMetricValues();
