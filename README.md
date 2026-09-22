@@ -17,8 +17,12 @@ python -m http.server 8000
 2. SQL Editorで `supabase/schema.sql` を実行します。
 3. Project Settings > APIからProject URLとanon keyを取得します。
 4. アプリの「データ管理」>「Supabase接続」に入力して保存します。
+5. Authentication > Providers > GoogleでGoogle Providerを有効にします。
+6. Authentication > URL ConfigurationのRedirect URLsに公開URLを追加します。
 
-anon keyはクライアント公開用のキーですが、現在のスキーマは個人用の簡易構成です。公開URLを不特定多数に配布する場合は、Supabase Authを追加し、RLSをログインユーザー単位へ変更してください。service_role keyは絶対に入力しないでください。
+Google Providerの設定には、Google Cloudで作成したOAuth Client IDとClient Secretを使います。Google Cloud側のAuthorized redirect URIには、SupabaseのAuthentication > Providers > Googleに表示されるCallback URLを登録してください。アプリのヘッダーにある「Googleでログイン」からログインできます。
+
+anon keyはクライアント公開用のキーです。記録と身体データはログインしたGoogleアカウントのIDで保存され、RLSによって同じアカウントのデータだけが読み書きできます。service_role keyは絶対に入力しないでください。
 
 ## Vercel公開
 
