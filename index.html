@@ -514,6 +514,19 @@
           .exercise-analysis-stat strong { display: block; font-size: 1.05rem; }
           .exercise-analysis-stat span { color: var(--muted); font-size: 0.72rem; }
 
+          .exercise-suggestions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
+          .exercise-suggestion { padding: 7px 10px; border: 1px solid rgba(252, 211, 77, 0.28); border-radius: 999px; background: rgba(245, 158, 11, 0.1); color: var(--text); font-size: 0.78rem; }
+          .previous-record { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; color: var(--muted); font-size: 0.78rem; }
+          .previous-record button { padding: 7px 10px; font-size: 0.76rem; }
+          .exercise-best-grid, .balance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+          .best-card, .balance-card { padding: 14px; border: 1px solid var(--border); border-radius: 14px; background: rgba(17, 24, 39, 0.8); }
+          .best-card strong, .balance-card strong { display: block; margin-bottom: 8px; }
+          .best-card span, .balance-card span { color: var(--muted); font-size: 0.8rem; }
+          .balance-bar-wrap { height: 9px; margin-top: 10px; border-radius: 999px; background: rgba(148, 163, 184, 0.18); overflow: hidden; }
+          .balance-bar { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #fbbf24, #f97316); }
+          .balance-card.needs-attention { border-color: rgba(239, 68, 68, 0.5); }
+          .backup-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
           .segment-bar-wrap {
             width: 100%;
             height: 8px;
@@ -994,6 +1007,8 @@
                   <span style="font-size:0.75rem; color: var(--muted);">種目を追加</span>
                 </div>
                 <input id="workout" name="workout" type="text" placeholder="例: ベンチプレス" required />
+                <div class="exercise-suggestions" id="exercise-suggestions"></div>
+                <div class="previous-record" id="previous-record" hidden></div>
               </div>
 
               <div class="field">
@@ -1115,6 +1130,16 @@
           </div>
           <div class="exercise-analysis" id="exercise-analysis"></div>
         </section>
+
+        <section class="panel week-summary">
+          <div class="list-header"><h2>自己ベスト</h2></div>
+          <div class="exercise-best-grid" id="exercise-best-grid"></div>
+        </section>
+
+        <section class="panel week-summary">
+          <div class="list-header"><h2>トレーニングバランス</h2></div>
+          <div class="balance-grid" id="balance-grid"></div>
+        </section>
       </div>
 
       <div class="page" id="metrics-page" hidden>
@@ -1181,6 +1206,10 @@
             <p class="field-hint">記録と身体データをJSONファイルに保存します。スマホ変更時やブラウザ削除前に利用してください。</p>
             <div class="management-actions">
               <button class="submit-btn" id="export-data" type="button">バックアップを書き出す</button>
+              <div class="backup-actions">
+                <button class="secondary" id="export-csv" type="button">CSV出力</button>
+                <button class="secondary" id="download-auto-backup" type="button">JSON自動保存</button>
+              </div>
               <label for="import-data">バックアップを読み込む<input id="import-data" type="file" accept="application/json,.json" /></label>
               <p class="management-status" id="backup-status" aria-live="polite"></p>
             </div>
@@ -1202,6 +1231,7 @@
               <button class="submit-btn" type="submit">Supabase設定を保存</button>
               <button class="danger-btn" id="clear-supabase-config" type="button">Supabase設定を解除</button>
               <p class="management-status" id="supabase-status" aria-live="polite">Supabase を使う場合は URL と anon key を設定してください。</p>
+              <p class="management-status" id="sync-status" aria-live="polite">同期状態を確認しています。</p>
             </form>
           </section>
 
@@ -1226,6 +1256,8 @@
       const STORAGE_KEY = 'training-log-app-records';
       const SUPABASE_CONFIG_KEY = 'training-log-app-supabase-config';
       const DEFAULT_USER_ID = 'personal-user';
+      const AUTO_BACKUP_KEY = 'training-log-app-auto-backup';
+      const COMMON_EXERCISES = ['ベンチプレス', 'スクワット', 'デッドリフト', 'ショルダープレス', 'ラットプルダウン', 'アームカール'];
 
       const form = document.getElementById('log-form');
       const recordList = document.getElementById('record-list');
@@ -1234,6 +1266,9 @@
       const setsSelect = document.getElementById('sets');
       const setFields = document.getElementById('set-fields');
       const dateInput = document.getElementById('date');
+      const workoutInput = document.getElementById('workout');
+      const exerciseSuggestions = document.getElementById('exercise-suggestions');
+      const previousRecord = document.getElementById('previous-record');
       const submitButton = form.querySelector('.submit-btn');
       const cancelEditButton = document.getElementById('cancel-edit');
       const finishDayButton = document.getElementById('finish-day');
@@ -1250,8 +1285,11 @@
       const exportDataButton = document.getElementById('export-data');
       const importDataInput = document.getElementById('import-data');
       const clearDataButton = document.getElementById('clear-data');
+      const exportCsvButton = document.getElementById('export-csv');
+      const downloadAutoBackupButton = document.getElementById('download-auto-backup');
       const backupStatus = document.getElementById('backup-status');
       const storageSummary = document.getElementById('storage-summary');
+      const syncStatus = document.getElementById('sync-status');
       const DATA_VERSION = 1;
       const metricsSummary = document.getElementById('metrics-summary');
       const metricsChart = document.getElementById('metrics-chart');
@@ -1262,6 +1300,8 @@
       const calendarPrevButton = document.getElementById('calendar-prev');
       const calendarNextButton = document.getElementById('calendar-next');
       const exerciseAnalysis = document.getElementById('exercise-analysis');
+      const exerciseBestGrid = document.getElementById('exercise-best-grid');
+      const balanceGrid = document.getElementById('balance-grid');
       const pageButtons = document.querySelectorAll('[data-page]');
       const pages = document.querySelectorAll('.page');
       const restTimers = new Map();
@@ -1353,6 +1393,7 @@
       async function syncSupabaseToLocal() {
         const client = initSupabaseClient();
         if (!client) {
+          syncStatus.textContent = 'Supabase未設定。ローカル保存を使用中です。';
           return false;
         }
 
@@ -1364,6 +1405,7 @@
 
         if (error) {
           console.error('Supabase fetch error:', error);
+          syncStatus.textContent = 'Supabase同期に失敗しました。設定を確認してください。';
           return false;
         }
 
@@ -1394,6 +1436,7 @@
         renderRecords();
         renderWeeklySummary();
         renderStorageSummary();
+        syncStatus.textContent = `Supabase同期済み: ${records.length}件`;
         return true;
       }
 
@@ -1515,6 +1558,7 @@
         const completedCount = getCompletedDates().length;
         const modeText = isSupabaseConfigured() ? '保存先: Supabase' : '保存先: ローカル';
         storageSummary.textContent = `${modeText} / トレーニング記録 ${recordCount}件 / 身体データ ${metricCount}件 / 完了日 ${completedCount}日`;
+        syncStatus.textContent = isSupabaseConfigured() ? 'Supabase設定済み。同期状態は最新の操作時に更新されます。' : 'Supabase未設定。現在はこの端末に保存しています。';
       }
 
       function isValidBackup(data) {
@@ -1522,14 +1566,24 @@
       }
 
       exportDataButton.addEventListener('click', () => {
-        const blob = new Blob([JSON.stringify(buildBackup(), null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `training-log-backup-${new Date().toISOString().slice(0, 10)}.json`;
-        link.click();
-        URL.revokeObjectURL(url);
+        downloadFile(JSON.stringify(buildBackup(), null, 2), `training-log-backup-${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
         backupStatus.textContent = 'バックアップを書き出しました。';
+      });
+
+      exportCsvButton.addEventListener('click', () => {
+        const headers = ['日付', '種目', 'カテゴリ', '強度', 'セット', '重量', '回数', '総重量', 'メモ'];
+        const rows = getRecords().flatMap((record) => (record.setDetails?.length ? record.setDetails : [{ weight: '', reps: '' }]).map((set) => [
+          record.date, record.workout, (record.category || []).join(' / '), record.intensity, record.setDetails?.length || record.sets || 0,
+          set.weight, set.reps, record.totalWeight || 0, record.notes || ''
+        ]));
+        const csv = [headers, ...rows].map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(',')).join('\n');
+        downloadFile('\ufeff' + csv, `training-log-${new Date().toISOString().slice(0, 10)}.csv`, 'text/csv');
+        backupStatus.textContent = 'CSVを書き出しました。';
+      });
+
+      downloadAutoBackupButton.addEventListener('click', () => {
+        downloadFile(localStorage.getItem(AUTO_BACKUP_KEY) || JSON.stringify(buildBackup(), null, 2), `training-log-auto-backup-${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
+        backupStatus.textContent = '自動バックアップJSONを保存しました。';
       });
 
       importDataInput.addEventListener('change', async () => {
@@ -1729,9 +1783,30 @@
             timerBox.classList.add('visible');
             timerDisplay.textContent = '00:00';
             timerLabel.textContent = '休憩終了。次のセットへ';
+            notifyRestFinished();
           }
         }, 1000);
         restTimers.set(setIndex, { interval });
+      }
+
+      function notifyRestFinished() {
+        if ('vibrate' in navigator) navigator.vibrate([220, 100, 220]);
+        try {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextClass) return;
+          const audioContext = new AudioContextClass();
+          const oscillator = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          oscillator.frequency.value = 880;
+          gain.gain.setValueAtTime(0.001, audioContext.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.18, audioContext.currentTime + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.35);
+          oscillator.connect(gain).connect(audioContext.destination);
+          oscillator.start();
+          oscillator.stop(audioContext.currentTime + 0.35);
+        } catch (error) {
+          console.warn('Rest timer sound could not be played:', error);
+        }
       }
 
       setFields.addEventListener('click', (event) => {
@@ -1771,6 +1846,64 @@
       function getRecordsForDate(date) {
         return getRecords().filter((record) => record.date === date);
       }
+
+      function renderExerciseSuggestions() {
+        const recordedNames = [...new Set(getRecords().map((record) => record.workout).filter(Boolean))];
+        const names = [...new Set([...COMMON_EXERCISES, ...recordedNames])].slice(0, 12);
+        exerciseSuggestions.innerHTML = names.map((name) => `<button class="exercise-suggestion" type="button" data-exercise-name="${name}">${name}</button>`).join('');
+      }
+
+      function getLatestExerciseRecord(name) {
+        return getRecords()
+          .filter((record) => record.workout === name && record.setDetails?.length)
+          .sort((a, b) => b.date.localeCompare(a.date))[0];
+      }
+
+      function renderPreviousRecord() {
+        const name = workoutInput.value.trim();
+        const record = name ? getLatestExerciseRecord(name) : null;
+        if (!record) {
+          previousRecord.hidden = true;
+          previousRecord.innerHTML = '';
+          return;
+        }
+
+        const summary = record.setDetails.map((set) => `${formatSetWeight(set.weight)} x ${set.reps}回`).join(' / ');
+        previousRecord.hidden = false;
+        previousRecord.innerHTML = `<span>前回 (${formatDate(record.date)}): ${summary}</span><button class="secondary" id="copy-previous-record" type="button">前回をコピー</button>`;
+      }
+
+      function copyPreviousRecord() {
+        const record = getLatestExerciseRecord(workoutInput.value.trim());
+        if (!record) return;
+        setsSelect.value = String(record.setDetails.length);
+        renderSetFields();
+        record.setDetails.forEach((set, index) => {
+          const typeInput = document.getElementById(`set-weight-type-${index}`);
+          const weightInput = document.getElementById(`set-weight-${index}`);
+          const repsInput = document.getElementById(`set-reps-${index}`);
+          const restInput = document.getElementById(`set-rest-${index}`);
+          typeInput.value = set.weight === '自重' ? 'bodyweight' : 'kg';
+          weightInput.value = set.weight === '自重' ? '' : set.weight;
+          weightInput.disabled = set.weight === '自重';
+          weightInput.required = set.weight !== '自重';
+          repsInput.value = set.reps;
+          restInput.value = String(set.restTime || 60);
+        });
+      }
+
+      exerciseSuggestions.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-exercise-name]');
+        if (!button) return;
+        workoutInput.value = button.dataset.exerciseName;
+        renderPreviousRecord();
+        workoutInput.focus();
+      });
+
+      workoutInput.addEventListener('input', renderPreviousRecord);
+      previousRecord.addEventListener('click', (event) => {
+        if (event.target.closest('#copy-previous-record')) copyPreviousRecord();
+      });
 
       function renderDaySummary() {
         const date = dateInput.value;
@@ -1923,10 +2056,30 @@
       }
 
       function saveRecords(records) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(records.map((record) => ({
+        const normalizedRecords = records.map((record) => ({
           ...record,
           id: record.id || createRecordId()
-        }))));
+        }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedRecords));
+        localStorage.setItem(AUTO_BACKUP_KEY, JSON.stringify(buildBackupData(normalizedRecords)));
+      }
+
+      function buildBackupData(records = getRecords()) {
+        return {
+          version: DATA_VERSION,
+          exportedAt: new Date().toISOString(),
+          records,
+          completedDates: getCompletedDates(),
+          bodyMetrics: getMetricHistory()
+        };
+      }
+
+      function downloadFile(content, filename, type) {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(new Blob([content], { type }));
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(link.href);
       }
 
       function formatDate(dateStr) {
@@ -2005,6 +2158,11 @@
           date.setDate(gridStart.getDate() + index);
           const dateKey = getCalendarDateKey(date);
           const dayRecords = records.filter((record) => record.date === dateKey);
+          const dayCategories = [...new Set(dayRecords.flatMap((record) => Array.isArray(record.category) ? record.category : [record.category].filter(Boolean)))];
+          const categoryColors = { 胸: '#ef4444', 腕: '#f59e0b', 肩: '#a78bfa', 背中: '#3b82f6', 脚: '#22c55e', 腹筋: '#f472b6' };
+          const dayColor = categoryColors[dayCategories[0]] || '#f59e0b';
+          const dayVolume = dayRecords.reduce((sum, record) => sum + (Number(record.totalWeight) || 0), 0);
+          const shade = Math.min(0.18 + dayVolume / 2000, 0.82);
           const isOutside = date.getMonth() !== month;
           const isSelected = dateKey === selectedCalendarDate;
           const classes = ['calendar-day'];
@@ -2013,7 +2171,7 @@
           if (isSelected) classes.push('selected');
           const mark = dayRecords.length ? `${dayRecords.length}件` : dateKey === today ? '今日' : '';
           calendarGrid.insertAdjacentHTML('beforeend', `
-            <button class="${classes.join(' ')}" type="button" data-calendar-date="${dateKey}">
+            <button class="${classes.join(' ')}" type="button" data-calendar-date="${dateKey}" style="${dayRecords.length ? `background: linear-gradient(135deg, ${dayColor}${Math.round(shade * 255).toString(16).padStart(2, '0')}, rgba(15, 23, 42, 0.78));` : ''}">
               <span class="calendar-day-number">${date.getDate()}</span>
               ${mark ? `<span class="calendar-day-mark">${mark}</span>` : ''}
             </button>
@@ -2095,6 +2253,39 @@
           }).join('');
       }
 
+      function renderBestAndBalance(records) {
+        if (!exerciseBestGrid || !balanceGrid) return;
+        const bestMap = new Map();
+        records.forEach((record) => {
+          const name = record.workout || '未設定';
+          const current = bestMap.get(name) || { maxWeight: 0, maxReps: 0, maxVolume: 0, weightDate: '', repsDate: '', volumeDate: '' };
+          (record.setDetails || []).forEach((set) => {
+            const weight = Number(set.weight);
+            const reps = Number(set.reps) || 0;
+            const volume = Number.isFinite(weight) ? weight * reps : 0;
+            if (weight > current.maxWeight) { current.maxWeight = weight; current.weightDate = record.date; }
+            if (reps > current.maxReps) { current.maxReps = reps; current.repsDate = record.date; }
+            if (volume > current.maxVolume) { current.maxVolume = volume; current.volumeDate = record.date; }
+          });
+          bestMap.set(name, current);
+        });
+
+        exerciseBestGrid.innerHTML = bestMap.size ? [...bestMap.entries()].sort(([a], [b]) => a.localeCompare(b, 'ja')).map(([name, best]) => `
+          <article class="best-card"><strong>${name}</strong><span>最高重量: ${best.maxWeight ? `${best.maxWeight}kg (${best.weightDate})` : '自重'}</span><span>最高回数: ${best.maxReps ? `${best.maxReps}回 (${best.repsDate})` : '-'}</span><span>最大総負荷: ${best.maxVolume ? `${best.maxVolume}kg (${best.volumeDate})` : '自重のみ'}</span></article>
+        `).join('') : '<div class="empty">記録すると自己ベストが表示されます。</div>';
+
+        const categories = ['胸', '背中', '脚', '腕', '肩', '腹筋'];
+        const counts = Object.fromEntries(categories.map((category) => [category, 0]));
+        records.forEach((record) => (Array.isArray(record.category) ? record.category : [record.category]).forEach((category) => { if (counts[category] !== undefined) counts[category] += 1; }));
+        const maxCount = Math.max(...Object.values(counts), 1);
+        const lowest = Math.min(...Object.values(counts));
+        balanceGrid.innerHTML = categories.map((category) => {
+          const count = counts[category];
+          const needsAttention = count === lowest;
+          return `<article class="balance-card${needsAttention ? ' needs-attention' : ''}"><strong>${category}</strong><span>${count}回${needsAttention && records.length ? ' / 少なめ' : ''}</span><div class="balance-bar-wrap"><div class="balance-bar" style="width:${Math.max((count / maxCount) * 100, count ? 12 : 3)}%"></div></div></article>`;
+        }).join('');
+      }
+
       function renderWeeklySummary() {
         renderTrainingCalendar();
         const weekRecords = getWeekRecords();
@@ -2106,6 +2297,7 @@
 
         if (!weekSummaryGrid || !weekChart || !monthCompare || !segmentChart) return;
         renderExerciseAnalysis(allRecords);
+        renderBestAndBalance(allRecords);
 
         const totalWeight = weekRecords.reduce((sum, record) => sum + (Number(record.totalWeight) || 0), 0);
         const totalSets = weekRecords.reduce((sum, record) => sum + (record.setDetails?.length || 0), 0);
@@ -2578,6 +2770,7 @@
       }
 
       dateInput.valueAsDate = new Date();
+      renderExerciseSuggestions();
       loadMetricValues();
       renderStorageSummary();
       renderSetFields();
