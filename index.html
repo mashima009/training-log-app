@@ -63,7 +63,7 @@
 
           .page-nav {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 8px;
             margin-bottom: 24px;
             padding: 7px;
@@ -526,6 +526,16 @@
           .balance-bar { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #fbbf24, #f97316); }
           .balance-card.needs-attention { border-color: rgba(239, 68, 68, 0.5); }
           .backup-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+          .meal-summary { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 12px; margin-bottom: 18px; }
+          .meal-summary-card { padding: 14px; border: 1px solid var(--border); border-radius: 14px; background: rgba(17, 24, 39, 0.8); }
+          .meal-summary-card span { display: block; color: var(--muted); font-size: 0.78rem; margin-bottom: 6px; }
+          .meal-summary-card strong { font-size: 1.25rem; }
+          .meal-list { display: grid; gap: 12px; }
+          .meal-item { padding: 14px; border: 1px solid var(--border); border-radius: 14px; background: linear-gradient(180deg, rgba(17, 24, 39, 0.82), rgba(15, 23, 42, 0.94)); }
+          .meal-item-top { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 8px; }
+          .meal-item-title { font-weight: 700; }
+          .meal-item-meta { display: flex; flex-wrap: wrap; gap: 8px 14px; color: var(--muted); font-size: 0.82rem; }
+          .meal-item-notes { margin-top: 8px; color: #dfe7f4; white-space: pre-wrap; }
 
           .segment-bar-wrap {
             width: 100%;
@@ -956,6 +966,7 @@
             .management-actions label, .management-actions button { width: 100%; }
             .record-meta { gap: 8px; }
             .record-meta span { display: inline-flex; min-height: 30px; align-items: center; }
+            .meal-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           }
         </style>
   </head>
@@ -969,6 +980,7 @@
         <button class="active" type="button" data-page="workout-page">トレーニング記録</button>
         <button type="button" data-page="analytics-page">統計・分析</button>
         <button type="button" data-page="metrics-page">身体データ</button>
+        <button type="button" data-page="meals-page">食事記録</button>
       </nav>
 
       <div class="page" id="workout-page">
@@ -1142,6 +1154,42 @@
         </section>
       </div>
 
+      <div class="page" id="meals-page" hidden>
+        <div class="page-intro">
+          <div>
+            <p class="page-kicker">NUTRITION LOG</p>
+            <h2 class="page-title">食事記録</h2>
+          </div>
+          <p class="page-description">食事内容と栄養素を記録して、1日の摂取量を確認します。</p>
+        </div>
+        <div class="layout">
+          <aside class="panel">
+            <form id="meal-form">
+              <div class="field"><label for="meal-date">日付</label><input id="meal-date" type="date" required /></div>
+              <div class="field"><label for="meal-type">食事区分</label><select id="meal-type"><option>朝食</option><option>昼食</option><option>夕食</option><option>間食</option></select></div>
+              <div class="field"><label for="meal-name">内容</label><input id="meal-name" type="text" placeholder="例: 鶏むね肉とご飯" required /></div>
+              <div class="inline-grid">
+                <div class="field"><label for="meal-calories">カロリー（kcal）</label><input id="meal-calories" type="number" min="0" step="1" placeholder="例: 650" /></div>
+                <div class="field"><label for="meal-protein">たんぱく質（g）</label><input id="meal-protein" type="number" min="0" step="0.1" placeholder="例: 35" /></div>
+              </div>
+              <div class="inline-grid">
+                <div class="field"><label for="meal-carbs">炭水化物（g）</label><input id="meal-carbs" type="number" min="0" step="0.1" placeholder="例: 80" /></div>
+                <div class="field"><label for="meal-fat">脂質（g）</label><input id="meal-fat" type="number" min="0" step="0.1" placeholder="例: 18" /></div>
+              </div>
+              <div class="field"><label for="meal-notes">メモ</label><textarea id="meal-notes" placeholder="食事のメモや体調"></textarea></div>
+              <button class="submit-btn" type="submit" id="meal-submit">食事を追加</button>
+              <button class="secondary" type="button" id="meal-cancel" hidden>編集をキャンセル</button>
+              <p class="day-status" id="meal-status" aria-live="polite">食事を記録すると、右側に一覧が表示されます。</p>
+            </form>
+          </aside>
+          <main class="panel">
+            <div class="list-header"><h2 id="meal-list-title">今日の食事</h2></div>
+            <div class="meal-summary" id="meal-summary"></div>
+            <div class="meal-list" id="meal-list"></div>
+          </main>
+        </div>
+      </div>
+
       <div class="page" id="metrics-page" hidden>
         <div class="metrics-layout">
           <section class="panel">
@@ -1254,6 +1302,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
       const STORAGE_KEY = 'training-log-app-records';
+      const MEALS_KEY = 'training-log-app-meals';
       const SUPABASE_CONFIG_KEY = 'training-log-app-supabase-config';
       const DEFAULT_USER_ID = 'personal-user';
       const AUTO_BACKUP_KEY = 'training-log-app-auto-backup';
@@ -1302,12 +1351,28 @@
       const exerciseAnalysis = document.getElementById('exercise-analysis');
       const exerciseBestGrid = document.getElementById('exercise-best-grid');
       const balanceGrid = document.getElementById('balance-grid');
+      const mealForm = document.getElementById('meal-form');
+      const mealDateInput = document.getElementById('meal-date');
+      const mealTypeInput = document.getElementById('meal-type');
+      const mealNameInput = document.getElementById('meal-name');
+      const mealCaloriesInput = document.getElementById('meal-calories');
+      const mealProteinInput = document.getElementById('meal-protein');
+      const mealCarbsInput = document.getElementById('meal-carbs');
+      const mealFatInput = document.getElementById('meal-fat');
+      const mealNotesInput = document.getElementById('meal-notes');
+      const mealSubmitButton = document.getElementById('meal-submit');
+      const mealCancelButton = document.getElementById('meal-cancel');
+      const mealStatus = document.getElementById('meal-status');
+      const mealListTitle = document.getElementById('meal-list-title');
+      const mealSummary = document.getElementById('meal-summary');
+      const mealList = document.getElementById('meal-list');
       const pageButtons = document.querySelectorAll('[data-page]');
       const pages = document.querySelectorAll('.page');
       const restTimers = new Map();
       let editingRecordId = null;
       let calendarMonth = new Date();
       let selectedCalendarDate = '';
+      let editingMealId = null;
       const supabaseForm = document.getElementById('supabase-config-form');
       const supabaseUrlInput = document.getElementById('supabase-url');
       const supabaseAnonKeyInput = document.getElementById('supabase-anon-key');
@@ -1547,6 +1612,7 @@
           version: DATA_VERSION,
           exportedAt: new Date().toISOString(),
           records: getRecords(),
+          meals: getMeals(),
           completedDates: getCompletedDates(),
           bodyMetrics: getMetricHistory()
         };
@@ -1562,7 +1628,7 @@
       }
 
       function isValidBackup(data) {
-        return data && typeof data === 'object' && Array.isArray(data.records) && Array.isArray(data.completedDates) && Array.isArray(data.bodyMetrics) && data.records.every((record) => record && typeof record === 'object' && typeof record.date === 'string' && typeof record.workout === 'string');
+        return data && typeof data === 'object' && Array.isArray(data.records) && (!data.meals || Array.isArray(data.meals)) && Array.isArray(data.completedDates) && Array.isArray(data.bodyMetrics) && data.records.every((record) => record && typeof record === 'object' && typeof record.date === 'string' && typeof record.workout === 'string');
       }
 
       exportDataButton.addEventListener('click', () => {
@@ -1594,6 +1660,7 @@
           if (!isValidBackup(data)) throw new Error('invalid backup');
           if (!confirm('現在のデータをバックアップの内容で置き換えますか？')) return;
           saveRecords(data.records);
+          saveMeals(data.meals || []);
           saveCompletedDates(data.completedDates);
           localStorage.setItem(METRICS_KEY, JSON.stringify(data.bodyMetrics));
           renderRecords();
@@ -1611,11 +1678,13 @@
       clearDataButton.addEventListener('click', () => {
         if (!confirm('トレーニング記録と身体データをすべて削除します。この操作は戻せません。')) return;
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(MEALS_KEY);
         localStorage.removeItem(COMPLETED_DATES_KEY);
         localStorage.removeItem(METRICS_KEY);
         renderRecords();
         renderWeeklySummary();
         loadMetricValues();
+        resetMealForm();
         renderStorageSummary();
         backupStatus.textContent = 'すべてのデータを削除しました。';
       });
@@ -2064,11 +2133,124 @@
         localStorage.setItem(AUTO_BACKUP_KEY, JSON.stringify(buildBackupData(normalizedRecords)));
       }
 
+      function getMeals() {
+        try {
+          const meals = JSON.parse(localStorage.getItem(MEALS_KEY) || '[]');
+          return Array.isArray(meals) ? meals : [];
+        } catch (error) {
+          return [];
+        }
+      }
+
+      function saveMeals(meals) {
+        localStorage.setItem(MEALS_KEY, JSON.stringify(meals.map((meal) => ({ ...meal, id: meal.id || createRecordId() }))));
+        localStorage.setItem(AUTO_BACKUP_KEY, JSON.stringify(buildBackupData()));
+      }
+
+      function getMealsForDate(date) {
+        return getMeals().filter((meal) => meal.date === date).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      }
+
+      function renderMeals() {
+        const date = mealDateInput.value;
+        const meals = date ? getMealsForDate(date) : [];
+        const totals = meals.reduce((sum, meal) => ({
+          calories: sum.calories + Number(meal.calories || 0),
+          protein: sum.protein + Number(meal.protein || 0),
+          carbs: sum.carbs + Number(meal.carbs || 0),
+          fat: sum.fat + Number(meal.fat || 0)
+        }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+        mealListTitle.textContent = date ? `${formatDate(date)}の食事` : '食事一覧';
+        mealSummary.innerHTML = [
+          ['カロリー', `${Math.round(totals.calories)}kcal`],
+          ['たんぱく質', `${totals.protein.toFixed(1)}g`],
+          ['炭水化物', `${totals.carbs.toFixed(1)}g`],
+          ['脂質', `${totals.fat.toFixed(1)}g`]
+        ].map(([label, value]) => `<div class="meal-summary-card"><span>${label}</span><strong>${value}</strong></div>`).join('');
+
+        mealList.innerHTML = meals.length ? meals.map((meal) => `
+          <article class="meal-item">
+            <div class="meal-item-top"><span class="meal-item-title">${meal.mealType} / ${meal.name}</span><span>${meal.calories ? `${meal.calories}kcal` : 'カロリー未入力'}</span></div>
+            <div class="meal-item-meta"><span>P ${meal.protein || 0}g</span><span>C ${meal.carbs || 0}g</span><span>F ${meal.fat || 0}g</span></div>
+            ${meal.notes ? `<div class="meal-item-notes">${meal.notes}</div>` : ''}
+            <div style="margin-top: 12px; display: flex; justify-content: flex-end; gap: 8px;"><button class="secondary meal-edit-btn" data-meal-id="${meal.id}" type="button">編集</button><button class="delete-btn meal-delete-btn" data-meal-id="${meal.id}" type="button">削除</button></div>
+          </article>
+        `).join('') : '<div class="empty">この日の食事記録はありません。</div>';
+      }
+
+      function resetMealForm() {
+        editingMealId = null;
+        mealForm.reset();
+        mealDateInput.valueAsDate = new Date();
+        mealSubmitButton.textContent = '食事を追加';
+        mealCancelButton.hidden = true;
+        mealStatus.textContent = '食事を記録すると、右側に一覧が表示されます。';
+        renderMeals();
+      }
+
+      mealForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const meal = {
+          id: editingMealId || createRecordId(),
+          date: mealDateInput.value,
+          mealType: mealTypeInput.value,
+          name: mealNameInput.value.trim(),
+          calories: Number(mealCaloriesInput.value) || 0,
+          protein: Number(mealProteinInput.value) || 0,
+          carbs: Number(mealCarbsInput.value) || 0,
+          fat: Number(mealFatInput.value) || 0,
+          notes: mealNotesInput.value.trim(),
+          createdAt: new Date().toISOString()
+        };
+        if (!meal.date || !meal.name) return;
+        const meals = getMeals();
+        const index = meals.findIndex((savedMeal) => savedMeal.id === editingMealId);
+        if (index >= 0) meals[index] = meal;
+        else meals.push(meal);
+        saveMeals(meals);
+        const savedDate = meal.date;
+        resetMealForm();
+        mealDateInput.value = savedDate;
+        renderMeals();
+        mealStatus.textContent = '食事を保存しました。';
+      });
+
+      mealCancelButton.addEventListener('click', resetMealForm);
+      mealDateInput.addEventListener('change', renderMeals);
+      mealList.addEventListener('click', (event) => {
+        const target = event.target;
+        const editButton = target.closest('.meal-edit-btn');
+        const deleteButton = target.closest('.meal-delete-btn');
+        if (editButton) {
+          const meal = getMeals().find((savedMeal) => savedMeal.id === editButton.dataset.mealId);
+          if (!meal) return;
+          editingMealId = meal.id;
+          mealDateInput.value = meal.date;
+          mealTypeInput.value = meal.mealType;
+          mealNameInput.value = meal.name;
+          mealCaloriesInput.value = meal.calories || '';
+          mealProteinInput.value = meal.protein || '';
+          mealCarbsInput.value = meal.carbs || '';
+          mealFatInput.value = meal.fat || '';
+          mealNotesInput.value = meal.notes || '';
+          mealSubmitButton.textContent = '食事を更新';
+          mealCancelButton.hidden = false;
+          mealForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          return;
+        }
+        if (deleteButton) {
+          saveMeals(getMeals().filter((meal) => meal.id !== deleteButton.dataset.mealId));
+          renderMeals();
+        }
+      });
+
       function buildBackupData(records = getRecords()) {
         return {
           version: DATA_VERSION,
           exportedAt: new Date().toISOString(),
           records,
+          meals: getMeals(),
           completedDates: getCompletedDates(),
           bodyMetrics: getMetricHistory()
         };
@@ -2770,7 +2952,9 @@
       }
 
       dateInput.valueAsDate = new Date();
+      mealDateInput.valueAsDate = new Date();
       renderExerciseSuggestions();
+      renderMeals();
       loadMetricValues();
       renderStorageSummary();
       renderSetFields();
