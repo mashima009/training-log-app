@@ -536,6 +536,8 @@
           .meal-item-title { font-weight: 700; }
           .meal-item-meta { display: flex; flex-wrap: wrap; gap: 8px 14px; color: var(--muted); font-size: 0.82rem; }
           .meal-item-notes { margin-top: 8px; color: #dfe7f4; white-space: pre-wrap; }
+          .meal-photo { display: block; width: 100%; max-height: 240px; margin-top: 10px; border-radius: 10px; object-fit: cover; }
+          .meal-share { margin-top: 10px; }
 
           .segment-bar-wrap {
             width: 100%;
@@ -1160,7 +1162,7 @@
             <p class="page-kicker">NUTRITION LOG</p>
             <h2 class="page-title">食事記録</h2>
           </div>
-          <p class="page-description">食事内容と栄養素を記録して、1日の摂取量を確認します。</p>
+          <p class="page-description">食事内容と写真を記録して、あとから見返せるようにします。</p>
         </div>
         <div class="layout">
           <aside class="panel">
@@ -1168,17 +1170,11 @@
               <div class="field"><label for="meal-date">日付</label><input id="meal-date" type="date" required /></div>
               <div class="field"><label for="meal-type">食事区分</label><select id="meal-type"><option>朝食</option><option>昼食</option><option>夕食</option><option>間食</option></select></div>
               <div class="field"><label for="meal-name">内容</label><input id="meal-name" type="text" placeholder="例: 鶏むね肉とご飯" required /></div>
-              <div class="inline-grid">
-                <div class="field"><label for="meal-calories">カロリー（kcal）</label><input id="meal-calories" type="number" min="0" step="1" placeholder="例: 650" /></div>
-                <div class="field"><label for="meal-protein">たんぱく質（g）</label><input id="meal-protein" type="number" min="0" step="0.1" placeholder="例: 35" /></div>
-              </div>
-              <div class="inline-grid">
-                <div class="field"><label for="meal-carbs">炭水化物（g）</label><input id="meal-carbs" type="number" min="0" step="0.1" placeholder="例: 80" /></div>
-                <div class="field"><label for="meal-fat">脂質（g）</label><input id="meal-fat" type="number" min="0" step="0.1" placeholder="例: 18" /></div>
-              </div>
+              <div class="field"><label for="meal-photo">食事の写真</label><input id="meal-photo" type="file" accept="image/*" /><img id="meal-photo-preview" class="meal-photo" alt="食事写真のプレビュー" hidden /></div>
               <div class="field"><label for="meal-notes">メモ</label><textarea id="meal-notes" placeholder="食事のメモや体調"></textarea></div>
               <button class="submit-btn" type="submit" id="meal-submit">食事を追加</button>
               <button class="secondary" type="button" id="meal-cancel" hidden>編集をキャンセル</button>
+              <button class="secondary" type="button" id="meal-calendar-share">Googleカレンダーへ送る</button>
               <p class="day-status" id="meal-status" aria-live="polite">食事を記録すると、右側に一覧が表示されます。</p>
             </form>
           </aside>
@@ -1355,13 +1351,12 @@
       const mealDateInput = document.getElementById('meal-date');
       const mealTypeInput = document.getElementById('meal-type');
       const mealNameInput = document.getElementById('meal-name');
-      const mealCaloriesInput = document.getElementById('meal-calories');
-      const mealProteinInput = document.getElementById('meal-protein');
-      const mealCarbsInput = document.getElementById('meal-carbs');
-      const mealFatInput = document.getElementById('meal-fat');
+      const mealPhotoInput = document.getElementById('meal-photo');
+      const mealPhotoPreview = document.getElementById('meal-photo-preview');
       const mealNotesInput = document.getElementById('meal-notes');
       const mealSubmitButton = document.getElementById('meal-submit');
       const mealCancelButton = document.getElementById('meal-cancel');
+      const mealCalendarShareButton = document.getElementById('meal-calendar-share');
       const mealStatus = document.getElementById('meal-status');
       const mealListTitle = document.getElementById('meal-list-title');
       const mealSummary = document.getElementById('meal-summary');
@@ -2154,27 +2149,16 @@
       function renderMeals() {
         const date = mealDateInput.value;
         const meals = date ? getMealsForDate(date) : [];
-        const totals = meals.reduce((sum, meal) => ({
-          calories: sum.calories + Number(meal.calories || 0),
-          protein: sum.protein + Number(meal.protein || 0),
-          carbs: sum.carbs + Number(meal.carbs || 0),
-          fat: sum.fat + Number(meal.fat || 0)
-        }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
         mealListTitle.textContent = date ? `${formatDate(date)}の食事` : '食事一覧';
-        mealSummary.innerHTML = [
-          ['カロリー', `${Math.round(totals.calories)}kcal`],
-          ['たんぱく質', `${totals.protein.toFixed(1)}g`],
-          ['炭水化物', `${totals.carbs.toFixed(1)}g`],
-          ['脂質', `${totals.fat.toFixed(1)}g`]
-        ].map(([label, value]) => `<div class="meal-summary-card"><span>${label}</span><strong>${value}</strong></div>`).join('');
+        mealSummary.innerHTML = `<div class="meal-summary-card"><span>記録数</span><strong>${meals.length}件</strong></div>`;
 
         mealList.innerHTML = meals.length ? meals.map((meal) => `
           <article class="meal-item">
-            <div class="meal-item-top"><span class="meal-item-title">${meal.mealType} / ${meal.name}</span><span>${meal.calories ? `${meal.calories}kcal` : 'カロリー未入力'}</span></div>
-            <div class="meal-item-meta"><span>P ${meal.protein || 0}g</span><span>C ${meal.carbs || 0}g</span><span>F ${meal.fat || 0}g</span></div>
+            <div class="meal-item-top"><span class="meal-item-title">${meal.mealType} / ${meal.name}</span></div>
+            ${meal.photo ? `<img class="meal-photo" src="${meal.photo}" alt="${meal.name}の食事写真" />` : ''}
             ${meal.notes ? `<div class="meal-item-notes">${meal.notes}</div>` : ''}
-            <div style="margin-top: 12px; display: flex; justify-content: flex-end; gap: 8px;"><button class="secondary meal-edit-btn" data-meal-id="${meal.id}" type="button">編集</button><button class="delete-btn meal-delete-btn" data-meal-id="${meal.id}" type="button">削除</button></div>
+            <div style="margin-top: 12px; display: flex; justify-content: flex-end; gap: 8px;"><button class="secondary meal-calendar-share meal-calendar-item" data-meal-id="${meal.id}" type="button">カレンダーへ</button><button class="secondary meal-edit-btn" data-meal-id="${meal.id}" type="button">編集</button><button class="delete-btn meal-delete-btn" data-meal-id="${meal.id}" type="button">削除</button></div>
           </article>
         `).join('') : '<div class="empty">この日の食事記録はありません。</div>';
       }
@@ -2183,23 +2167,41 @@
         editingMealId = null;
         mealForm.reset();
         mealDateInput.valueAsDate = new Date();
+        mealPhotoPreview.hidden = true;
+        mealPhotoPreview.removeAttribute('src');
         mealSubmitButton.textContent = '食事を追加';
         mealCancelButton.hidden = true;
         mealStatus.textContent = '食事を記録すると、右側に一覧が表示されます。';
         renderMeals();
       }
 
-      mealForm.addEventListener('submit', (event) => {
+      function readPhotoFile(file) {
+        return new Promise((resolve, reject) => {
+          if (!file) return resolve('');
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      mealPhotoInput.addEventListener('change', () => {
+        const [file] = mealPhotoInput.files || [];
+        if (!file) return;
+        mealPhotoPreview.src = URL.createObjectURL(file);
+        mealPhotoPreview.hidden = false;
+      });
+
+      mealForm.addEventListener('submit', async (event) => {
         event.preventDefault();
+        const existingMeal = editingMealId ? getMeals().find((meal) => meal.id === editingMealId) : null;
+        const selectedPhoto = await readPhotoFile(mealPhotoInput.files?.[0]);
         const meal = {
           id: editingMealId || createRecordId(),
           date: mealDateInput.value,
           mealType: mealTypeInput.value,
           name: mealNameInput.value.trim(),
-          calories: Number(mealCaloriesInput.value) || 0,
-          protein: Number(mealProteinInput.value) || 0,
-          carbs: Number(mealCarbsInput.value) || 0,
-          fat: Number(mealFatInput.value) || 0,
+          photo: selectedPhoto || existingMeal?.photo || '',
           notes: mealNotesInput.value.trim(),
           createdAt: new Date().toISOString()
         };
@@ -2218,10 +2220,40 @@
 
       mealCancelButton.addEventListener('click', resetMealForm);
       mealDateInput.addEventListener('change', renderMeals);
+
+      function buildMealCalendarUrl(meals, date) {
+        const startDate = new Date(`${date}T00:00:00`);
+        const endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + 1);
+        const formatCalendarDate = (value) => `${value.getFullYear()}${String(value.getMonth() + 1).padStart(2, '0')}${String(value.getDate()).padStart(2, '0')}`;
+        const details = meals.map((meal) => [
+          `${meal.mealType}: ${meal.name}`,
+          meal.notes ? `メモ: ${meal.notes}` : null,
+          meal.photo ? '写真: Training Logに保存されています' : null
+        ].filter(Boolean).join('\n')).join('\n\n');
+        return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('食事記録')}&dates=${formatCalendarDate(startDate)}/${formatCalendarDate(endDate)}&details=${encodeURIComponent(details)}`;
+      }
+
+      function openMealsInGoogleCalendar(meals, date) {
+        if (!meals.length) {
+          mealStatus.textContent = '送信する食事記録がありません。';
+          return;
+        }
+        const calendarWindow = window.open(buildMealCalendarUrl(meals, date), '_blank', 'noopener,noreferrer');
+        mealStatus.textContent = calendarWindow ? 'Googleカレンダーの予定作成画面を開きました。' : 'ポップアップを許可してGoogleカレンダーを開いてください。';
+      }
+
+      mealCalendarShareButton.addEventListener('click', () => openMealsInGoogleCalendar(getMealsForDate(mealDateInput.value), mealDateInput.value));
       mealList.addEventListener('click', (event) => {
         const target = event.target;
         const editButton = target.closest('.meal-edit-btn');
         const deleteButton = target.closest('.meal-delete-btn');
+        const calendarButton = target.closest('.meal-calendar-item');
+        if (calendarButton) {
+          const meal = getMeals().find((savedMeal) => savedMeal.id === calendarButton.dataset.mealId);
+          if (meal) openMealsInGoogleCalendar([meal], meal.date);
+          return;
+        }
         if (editButton) {
           const meal = getMeals().find((savedMeal) => savedMeal.id === editButton.dataset.mealId);
           if (!meal) return;
@@ -2229,10 +2261,8 @@
           mealDateInput.value = meal.date;
           mealTypeInput.value = meal.mealType;
           mealNameInput.value = meal.name;
-          mealCaloriesInput.value = meal.calories || '';
-          mealProteinInput.value = meal.protein || '';
-          mealCarbsInput.value = meal.carbs || '';
-          mealFatInput.value = meal.fat || '';
+          mealPhotoPreview.src = meal.photo || '';
+          mealPhotoPreview.hidden = !meal.photo;
           mealNotesInput.value = meal.notes || '';
           mealSubmitButton.textContent = '食事を更新';
           mealCancelButton.hidden = false;
