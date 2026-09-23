@@ -1218,6 +1218,7 @@
               <label for="metrics-image">TANITA FITのスクリーンショット</label>
               <input id="metrics-image" type="file" accept="image/*" />
               <img id="metrics-image-preview" class="image-preview" alt="アップロードした測定画像" />
+              <button class="secondary" id="read-metrics-image" type="button" disabled>画像を読み取る</button>
               <p class="metrics-status" id="metrics-image-status">画像を添付すると、この画面で確認できます。</p>
             </div>
             <p class="field-hint">今回の画像から読み取った値を入力済みです。保存前に内容を確認してください。</p>
@@ -1315,6 +1316,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script>
       const STORAGE_KEY = 'training-log-app-records';
       const MEALS_KEY = 'training-log-app-meals';
@@ -1342,6 +1344,7 @@
       const metricsForm = document.getElementById('metrics-form');
       const metricsImageInput = document.getElementById('metrics-image');
       const metricsImagePreview = document.getElementById('metrics-image-preview');
+      const readMetricsImageButton = document.getElementById('read-metrics-image');
       const metricsImageStatus = document.getElementById('metrics-image-status');
       const metricsStatus = document.getElementById('metrics-status');
       const METRICS_KEY = 'training-log-app-body-metrics';
@@ -1910,7 +1913,74 @@
         if (!file) return;
         metricsImagePreview.src = URL.createObjectURL(file);
         metricsImagePreview.classList.add('visible');
+        readMetricsImageButton.disabled = false;
         metricsImageStatus.textContent = `${file.name}を読み込みました。数値を確認して保存してください。`;
+      });
+
+      function normalizeOcrText(text) {
+        return text
+          .replace(/[０-９]/g, (character) => String.fromCharCode(character.charCodeAt(0) - 0xfee0))
+          .replace(/[，、]/g, ',')
+          .replace(/[．。]/g, '.')
+          .replace(/\s+/g, ' ');
+      }
+
+      function readMetricValue(text, patterns) {
+        for (const pattern of patterns) {
+          const match = text.match(pattern);
+          if (match) return Number(match[1].replace(',', '.'));
+        }
+        return null;
+      }
+
+      function applyOcrMetricValues(text) {
+        const normalizedText = normalizeOcrText(text);
+        const mappings = [
+          ['metric-weight', [/体重[^0-9]{0,12}(\d+(?:\.\d+)?)/i, /weight[^0-9]{0,12}(\d+(?:\.\d+)?)/i]],
+          ['metric-bmi', [/BMI[^0-9]{0,12}(\d+(?:\.\d+)?)/i]],
+          ['metric-body-fat', [/体脂肪率?[^0-9]{0,12}(\d+(?:\.\d+)?)/i, /body\s*fat[^0-9]{0,12}(\d+(?:\.\d+)?)/i]],
+          ['metric-visceral-fat', [/内臓脂肪(?:レベル)?[^0-9]{0,12}(\d+(?:\.\d+)?)/i, /visceral[^0-9]{0,12}(\d+(?:\.\d+)?)/i]],
+          ['metric-muscle', [/筋肉量[^0-9]{0,12}(\d+(?:\.\d+)?)/i, /muscle[^0-9]{0,12}(\d+(?:\.\d+)?)/i]],
+          ['metric-bone', [/推定骨量[^0-9]{0,12}(\d+(?:\.\d+)?)/i, /bone[^0-9]{0,12}(\d+(?:\.\d+)?)/i]],
+          ['metric-bmr', [/基礎代謝量[^0-9]{0,12}(\d+(?:\.\d+)?)/i, /BMR[^0-9]{0,12}(\d+(?:\.\d+)?)/i]],
+          ['metric-age', [/体内年齢[^0-9]{0,12}(\d+(?:\.\d+)?)/i, /body\s*age[^0-9]{0,12}(\d+(?:\.\d+)?)/i]],
+          ['metric-muscle-quality', [/筋質点数[^0-9]{0,12}(\d+(?:\.\d+)?)/i, /muscle\s*quality[^0-9]{0,12}(\d+(?:\.\d+)?)/i]]
+        ];
+        let appliedCount = 0;
+        mappings.forEach(([id, patterns]) => {
+          const value = readMetricValue(normalizedText, patterns);
+          const input = document.getElementById(id);
+          if (value !== null && input) {
+            input.value = value;
+            appliedCount += 1;
+          }
+        });
+        return appliedCount;
+      }
+
+      readMetricsImageButton.addEventListener('click', async () => {
+        const [file] = metricsImageInput.files || [];
+        if (!file || !window.Tesseract) return;
+        readMetricsImageButton.disabled = true;
+        metricsImageStatus.textContent = '画像を読み取っています。少しお待ちください。';
+        try {
+          const result = await window.Tesseract.recognize(file, 'jpn+eng', {
+            logger: (message) => {
+              if (message.status === 'recognizing text' && message.progress) {
+                metricsImageStatus.textContent = `画像を読み取っています… ${Math.round(message.progress * 100)}%`;
+              }
+            }
+          });
+          const appliedCount = applyOcrMetricValues(result.data.text);
+          metricsImageStatus.textContent = appliedCount
+            ? `${appliedCount}項目を入力しました。内容を確認して保存してください。`
+            : '数値を認識できませんでした。画像を拡大するか、手入力してください。';
+        } catch (error) {
+          console.error('Metric OCR error:', error);
+          metricsImageStatus.textContent = '画像の読み取りに失敗しました。手入力してください。';
+        } finally {
+          readMetricsImageButton.disabled = false;
+        }
       });
 
       function readFileAsDataUrl(file) {
