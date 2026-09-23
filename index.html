@@ -1189,6 +1189,18 @@
       </div>
 
       <div class="page" id="metrics-page" hidden>
+        <section class="panel week-summary">
+          <div class="list-header"><h2>測定日カレンダー</h2></div>
+          <div class="calendar-header">
+            <h3 id="metrics-calendar-month-label"></h3>
+            <div class="calendar-controls">
+              <button class="secondary" id="metrics-calendar-prev" type="button">前月</button>
+              <button class="secondary" id="metrics-calendar-next" type="button">次月</button>
+            </div>
+          </div>
+          <div class="calendar-grid" id="metrics-calendar-grid"></div>
+          <p class="field-hint" id="metrics-calendar-status">測定日を選択すると、その日の画像と数値を表示します。</p>
+        </section>
         <div class="metrics-layout">
           <section class="panel">
             <div class="list-header">
@@ -1346,6 +1358,11 @@
       const exerciseAnalysis = document.getElementById('exercise-analysis');
       const exerciseBestGrid = document.getElementById('exercise-best-grid');
       const balanceGrid = document.getElementById('balance-grid');
+      const metricsCalendarMonthLabel = document.getElementById('metrics-calendar-month-label');
+      const metricsCalendarGrid = document.getElementById('metrics-calendar-grid');
+      const metricsCalendarStatus = document.getElementById('metrics-calendar-status');
+      const metricsCalendarPrevButton = document.getElementById('metrics-calendar-prev');
+      const metricsCalendarNextButton = document.getElementById('metrics-calendar-next');
       const mealForm = document.getElementById('meal-form');
       const mealDateInput = document.getElementById('meal-date');
       const mealStartTimeInput = document.getElementById('meal-start-time');
@@ -1366,6 +1383,7 @@
       let editingRecordId = null;
       let calendarMonth = new Date();
       let selectedCalendarDate = '';
+      let metricsCalendarMonth = new Date();
       let editingMealId = null;
       const supabaseForm = document.getElementById('supabase-config-form');
       const supabaseUrlInput = document.getElementById('supabase-url');
@@ -1711,6 +1729,7 @@
         }
 
         const history = getMetricHistory().sort((a, b) => b.date.localeCompare(a.date));
+        renderMetricsCalendar(history);
         const latest = history[0];
         if (!latest) {
           renderMetricsAnalysis([]);
@@ -1724,6 +1743,71 @@
         metricsStatus.textContent = '保存済みの身体データを表示しています。';
         renderMetricsAnalysis(history);
       }
+
+      function renderMetricsCalendar(history = getMetricHistory()) {
+        if (!metricsCalendarGrid || !metricsCalendarMonthLabel) return;
+        const year = metricsCalendarMonth.getFullYear();
+        const month = metricsCalendarMonth.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const gridStart = new Date(year, month, 1 - firstDay.getDay());
+        const dates = new Set(history.map((entry) => entry.date));
+        metricsCalendarMonthLabel.textContent = new Intl.DateTimeFormat('ja-JP', { year: 'numeric', month: 'long' }).format(firstDay);
+        metricsCalendarGrid.innerHTML = ['日', '月', '火', '水', '木', '金', '土'].map((weekday) => `<div class="calendar-weekday">${weekday}</div>`).join('');
+        Array.from({ length: 42 }, (_, index) => {
+          const date = new Date(gridStart);
+          date.setDate(gridStart.getDate() + index);
+          const dateKey = getCalendarDateKey(date);
+          const hasMetric = dates.has(dateKey);
+          const classes = ['calendar-day'];
+          if (date.getMonth() !== month) classes.push('outside');
+          if (hasMetric) classes.push('has-record');
+          if (dateKey === document.getElementById('metric-date').value) classes.push('selected');
+          metricsCalendarGrid.insertAdjacentHTML('beforeend', `<button class="${classes.join(' ')}" type="button" data-metrics-date="${dateKey}"><span class="calendar-day-number">${date.getDate()}</span>${hasMetric ? '<span class="calendar-day-mark">測定</span>' : ''}</button>`);
+        });
+      }
+
+      function showMetricForDate(date, history = getMetricHistory()) {
+        const entry = history.find((savedEntry) => savedEntry.date === date);
+        document.getElementById('metric-date').value = date;
+        if (!entry) {
+          metricsCalendarStatus.textContent = `${formatDate(date)}の測定記録はありません。入力して保存できます。`;
+          metricsImagePreview.removeAttribute('src');
+          metricsImagePreview.classList.remove('visible');
+          metricsImageStatus.textContent = 'この日の測定画像はありません。';
+          return;
+        }
+        Object.entries(entry.values || {}).forEach(([id, value]) => {
+          const input = document.getElementById(id);
+          if (input) input.value = value;
+        });
+        if (entry.imageData) {
+          metricsImagePreview.src = entry.imageData;
+          metricsImagePreview.classList.add('visible');
+          metricsImageStatus.textContent = '選択した日の測定画像を表示しています。';
+        } else {
+          metricsImagePreview.removeAttribute('src');
+          metricsImagePreview.classList.remove('visible');
+          metricsImageStatus.textContent = 'この日の測定画像はありません。';
+        }
+        metricsCalendarStatus.textContent = `${formatDate(date)}の測定記録を表示しています。`;
+      }
+
+      metricsCalendarGrid.addEventListener('click', (event) => {
+        const target = event.target.closest('[data-metrics-date]');
+        if (!target) return;
+        showMetricForDate(target.dataset.metricsDate);
+        renderMetricsCalendar();
+      });
+
+      metricsCalendarPrevButton.addEventListener('click', () => {
+        metricsCalendarMonth = new Date(metricsCalendarMonth.getFullYear(), metricsCalendarMonth.getMonth() - 1, 1);
+        renderMetricsCalendar();
+      });
+
+      metricsCalendarNextButton.addEventListener('click', () => {
+        metricsCalendarMonth = new Date(metricsCalendarMonth.getFullYear(), metricsCalendarMonth.getMonth() + 1, 1);
+        renderMetricsCalendar();
+      });
 
       function renderMetricsAnalysis(history) {
         const latest = history[0];
@@ -1794,9 +1878,22 @@
         metricsImageStatus.textContent = `${file.name}を読み込みました。数値を確認して保存してください。`;
       });
 
+      function readFileAsDataUrl(file) {
+        return new Promise((resolve, reject) => {
+          if (!file) return resolve('');
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
       metricsForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         const entry = getMetricValues();
+        entry.imageData = await readFileAsDataUrl(metricsImageInput.files?.[0]);
+        const previousEntry = getMetricHistory().find((savedEntry) => savedEntry.date === entry.date);
+        if (!entry.imageData && previousEntry?.imageData) entry.imageData = previousEntry.imageData;
         const history = getMetricHistory().filter((savedEntry) => savedEntry.date !== entry.date);
         history.push(entry);
         history.sort((a, b) => b.date.localeCompare(a.date));
@@ -1805,7 +1902,14 @@
           await persistMetricHistory(history);
         }
         renderMetricsAnalysis(history);
+        renderMetricsCalendar(history);
+        showMetricForDate(entry.date, history);
         metricsStatus.textContent = '身体データを保存しました。';
+      });
+
+      document.getElementById('metric-date').addEventListener('change', () => {
+        showMetricForDate(document.getElementById('metric-date').value);
+        renderMetricsCalendar();
       });
 
       function formatRestTime(totalSeconds) {
@@ -2339,13 +2443,13 @@
         const year = calendarMonth.getFullYear();
         const month = calendarMonth.getMonth();
         const firstDay = new Date(year, month, 1);
-        const startOffset = (firstDay.getDay() + 6) % 7;
+        const startOffset = firstDay.getDay();
         const gridStart = new Date(year, month, 1 - startOffset);
         const today = getCalendarDateKey(new Date());
         const monthLabel = new Intl.DateTimeFormat('ja-JP', { year: 'numeric', month: 'long' }).format(firstDay);
 
         calendarMonthLabel.textContent = monthLabel;
-        calendarGrid.innerHTML = ['月', '火', '水', '木', '金', '土', '日'].map((weekday) => `<div class="calendar-weekday">${weekday}</div>`).join('');
+        calendarGrid.innerHTML = ['日', '月', '火', '水', '木', '金', '土'].map((weekday) => `<div class="calendar-weekday">${weekday}</div>`).join('');
 
         Array.from({ length: 42 }, (_, index) => {
           const date = new Date(gridStart);
