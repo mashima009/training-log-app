@@ -514,8 +514,6 @@
           .exercise-analysis-stat strong { display: block; font-size: 1.05rem; }
           .exercise-analysis-stat span { color: var(--muted); font-size: 0.72rem; }
 
-          .exercise-suggestions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
-          .exercise-suggestion { padding: 7px 10px; border: 1px solid rgba(252, 211, 77, 0.28); border-radius: 999px; background: rgba(245, 158, 11, 0.1); color: var(--text); font-size: 0.78rem; }
           .previous-record { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; color: var(--muted); font-size: 0.78rem; }
           .previous-record button { padding: 7px 10px; font-size: 0.76rem; }
           .exercise-best-grid, .balance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
@@ -1023,7 +1021,6 @@
                   <span style="font-size:0.75rem; color: var(--muted);">種目を追加</span>
                 </div>
                 <input id="workout" name="workout" type="text" placeholder="例: ベンチプレス" required />
-                <div class="exercise-suggestions" id="exercise-suggestions"></div>
                 <div class="previous-record" id="previous-record" hidden></div>
               </div>
 
@@ -1313,7 +1310,6 @@
       const SUPABASE_CONFIG_KEY = 'training-log-app-supabase-config';
       const DEFAULT_USER_ID = 'personal-user';
       const AUTO_BACKUP_KEY = 'training-log-app-auto-backup';
-      const COMMON_EXERCISES = ['ベンチプレス', 'スクワット', 'デッドリフト', 'ショルダープレス', 'ラットプルダウン', 'アームカール'];
 
       const form = document.getElementById('log-form');
       const recordList = document.getElementById('record-list');
@@ -1323,7 +1319,6 @@
       const setFields = document.getElementById('set-fields');
       const dateInput = document.getElementById('date');
       const workoutInput = document.getElementById('workout');
-      const exerciseSuggestions = document.getElementById('exercise-suggestions');
       const previousRecord = document.getElementById('previous-record');
       const submitButton = form.querySelector('.submit-btn');
       const cancelEditButton = document.getElementById('cancel-edit');
@@ -2014,12 +2009,6 @@
         return getRecords().filter((record) => record.date === date);
       }
 
-      function renderExerciseSuggestions() {
-        const recordedNames = [...new Set(getRecords().map((record) => record.workout).filter(Boolean))];
-        const names = [...new Set([...COMMON_EXERCISES, ...recordedNames])].slice(0, 12);
-        exerciseSuggestions.innerHTML = names.map((name) => `<button class="exercise-suggestion" type="button" data-exercise-name="${name}">${name}</button>`).join('');
-      }
-
       function getLatestExerciseRecord(name) {
         return getRecords()
           .filter((record) => record.workout === name && record.setDetails?.length)
@@ -2058,14 +2047,6 @@
           restInput.value = String(set.restTime || 60);
         });
       }
-
-      exerciseSuggestions.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-exercise-name]');
-        if (!button) return;
-        workoutInput.value = button.dataset.exerciseName;
-        renderPreviousRecord();
-        workoutInput.focus();
-      });
 
       workoutInput.addEventListener('input', renderPreviousRecord);
       previousRecord.addEventListener('click', (event) => {
@@ -2748,8 +2729,8 @@
 
         const start = formatGoogleDate(new Date(startDate + 'T00:00:00'));
         const end = formatGoogleDate(endDate);
-        const title = 'トレーニング記録';
         const categoriesText = summary.category?.length ? summary.category.join(' / ') : '未分類';
+        const title = `トレーニング記録（${categoriesText}）`;
         const detailsText = [
           `カテゴリ: ${categoriesText}`,
           `メニュー内容: ${summary.workout}`,
@@ -3071,7 +3052,6 @@
       mealDateInput.valueAsDate = new Date();
       mealStartTimeInput.value = '07:00';
       mealEndTimeInput.value = '07:30';
-      renderExerciseSuggestions();
       renderMeals();
       loadMetricValues();
       renderStorageSummary();
