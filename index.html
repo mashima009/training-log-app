@@ -106,6 +106,8 @@
           }
 
           .page[hidden] { display: none; }
+          .page:not([hidden]) { animation: page-enter 0.22s ease both; }
+          @keyframes page-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
           .page-intro {
             display: flex;
@@ -848,6 +850,11 @@
           }
 
           button:hover { transform: translateY(-1px); }
+          button:active { transform: translateY(0) scale(0.98); }
+          button:disabled { cursor: not-allowed; opacity: 0.55; }
+          input, select, textarea, button { transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, transform 0.15s ease; }
+          .toast { position: fixed; right: 20px; bottom: 20px; z-index: 20; max-width: min(360px, calc(100vw - 32px)); padding: 12px 16px; border: 1px solid rgba(34, 197, 94, 0.5); border-radius: 12px; background: rgba(15, 23, 42, 0.96); color: #dcfce7; box-shadow: var(--shadow); opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease; }
+          .toast.visible { opacity: 1; transform: translateY(0); }
 
           .list-header {
             display: flex;
@@ -869,7 +876,10 @@
             border-radius: 16px;
             background: linear-gradient(180deg, rgba(17, 24, 39, 0.82), rgba(15, 23, 42, 0.94));
             padding: 18px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
           }
+
+          .record-item.just-saved { border-color: rgba(34, 197, 94, 0.82); box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.13); transform: translateY(-2px); }
 
           .record-top {
             display: flex;
@@ -973,6 +983,7 @@
         </style>
   </head>
   <body>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <div class="container">
       <header class="app-header">
         <h1>Training Log</h1>
@@ -1087,7 +1098,6 @@
         </div>
       </div>
 
-      <div class="page" id="analytics-page" hidden>
         <div class="page-intro">
           <div>
             <p class="page-kicker">PERFORMANCE INSIGHTS</p>
@@ -1310,6 +1320,7 @@
       const SUPABASE_CONFIG_KEY = 'training-log-app-supabase-config';
       const DEFAULT_USER_ID = 'personal-user';
       const AUTO_BACKUP_KEY = 'training-log-app-auto-backup';
+      const LAST_CATEGORIES_KEY = 'training-log-app-last-categories';
 
       const form = document.getElementById('log-form');
       const recordList = document.getElementById('record-list');
@@ -1372,6 +1383,7 @@
       const mealListTitle = document.getElementById('meal-list-title');
       const mealSummary = document.getElementById('meal-summary');
       const mealList = document.getElementById('meal-list');
+      const toast = document.getElementById('toast');
       const pageButtons = document.querySelectorAll('[data-page]');
       const pages = document.querySelectorAll('.page');
       const restTimers = new Map();
@@ -1380,6 +1392,8 @@
       let selectedCalendarDate = '';
       let metricsCalendarMonth = new Date();
       let editingMealId = null;
+      let lastSavedRecordId = null;
+      let toastTimer = null;
       const supabaseForm = document.getElementById('supabase-config-form');
       const supabaseUrlInput = document.getElementById('supabase-url');
       const supabaseAnonKeyInput = document.getElementById('supabase-anon-key');
@@ -1387,6 +1401,31 @@
       const clearSupabaseConfigButton = document.getElementById('clear-supabase-config');
 
       let supabaseClient = null;
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add('visible');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('visible'), 2600);
+      }
+
+      function getCurrentTime() {
+        const now = new Date();
+        return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      }
+
+      function getTimeAfter(minutes) {
+        const date = new Date();
+        date.setMinutes(date.getMinutes() + minutes);
+        return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+      }
+
+      function restoreLastCategories() {
+        try {
+          const categories = JSON.parse(localStorage.getItem(LAST_CATEGORIES_KEY) || '[]');
+          form.querySelectorAll('input[name="category"]').forEach((input) => { input.checked = categories.includes(input.value); });
+        } catch (error) { }
+      }
 
       function getSupabaseConfig() {
         try {
@@ -1900,6 +1939,7 @@
         renderMetricsCalendar(history);
         showMetricForDate(entry.date, history);
         metricsStatus.textContent = '身体データを保存しました。';
+        showToast('身体データを保存しました。');
       });
 
       document.getElementById('metric-date').addEventListener('change', () => {
@@ -2257,8 +2297,8 @@
         editingMealId = null;
         mealForm.reset();
         mealDateInput.valueAsDate = new Date();
-        mealStartTimeInput.value = '07:00';
-        mealEndTimeInput.value = '07:30';
+        mealStartTimeInput.value = getCurrentTime();
+        mealEndTimeInput.value = getTimeAfter(30);
         mealSubmitButton.textContent = '食事を追加';
         mealCancelButton.hidden = true;
         mealStatus.textContent = '食事を記録すると、右側に一覧が表示されます。';
@@ -2267,6 +2307,7 @@
 
       mealForm.addEventListener('submit', async (event) => {
         event.preventDefault();
+        mealSubmitButton.disabled = true;
         const meal = {
           id: editingMealId || createRecordId(),
           date: mealDateInput.value,
@@ -2288,6 +2329,8 @@
         mealDateInput.value = savedDate;
         renderMeals();
         mealStatus.textContent = '食事を保存しました。';
+        showToast('食事記録を保存しました。');
+        mealSubmitButton.disabled = false;
       });
 
       mealCancelButton.addEventListener('click', resetMealForm);
@@ -2841,7 +2884,7 @@
             }).join('');
 
             return `
-              <div class="record-item">
+              <div class="record-item${record.id === lastSavedRecordId ? ' just-saved' : ''}">
                 <div class="record-top">
                   <div class="record-title">${record.workout}</div>
                   <div>${categoryBadges}</div>
@@ -2881,6 +2924,8 @@
 
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
+        const wasEditing = Boolean(editingRecordId);
+        submitButton.disabled = true;
 
         const formData = new FormData(form);
         const categories = formData.getAll('category');
@@ -2922,6 +2967,8 @@
         } else {
           records.push(record);
         }
+        localStorage.setItem(LAST_CATEGORIES_KEY, JSON.stringify(categories));
+        lastSavedRecordId = record.id;
         saveRecords(records);
         if (isSupabaseConfigured()) {
           await persistWorkoutRecord(record);
@@ -2929,6 +2976,7 @@
         const selectedDate = record.date;
         editingRecordId = null;
         form.reset();
+        restoreLastCategories();
         restTimers.forEach((timer) => clearInterval(timer.interval));
         restTimers.clear();
         dateInput.value = selectedDate;
@@ -2938,6 +2986,9 @@
         renderSetFields();
         updateDayStatus();
         renderRecords();
+        showToast(wasEditing ? 'トレーニング記録を更新しました。' : 'トレーニング記録を保存しました。');
+        requestAnimationFrame(() => document.querySelector(`[data-record-id="${record.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+        submitButton.disabled = false;
       });
 
       setsSelect.addEventListener('change', renderSetFields);
@@ -3050,8 +3101,9 @@
 
       dateInput.valueAsDate = new Date();
       mealDateInput.valueAsDate = new Date();
-      mealStartTimeInput.value = '07:00';
-      mealEndTimeInput.value = '07:30';
+      mealStartTimeInput.value = getCurrentTime();
+      mealEndTimeInput.value = getTimeAfter(30);
+      restoreLastCategories();
       renderMeals();
       loadMetricValues();
       renderStorageSummary();
