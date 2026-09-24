@@ -1961,7 +1961,7 @@
         const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
         for (let index = 0; index < pixels.data.length; index += 4) {
           const gray = pixels.data[index] * 0.299 + pixels.data[index + 1] * 0.587 + pixels.data[index + 2] * 0.114;
-          const enhanced = gray > threshold ? 255 : 0;
+          const enhanced = gray > threshold ? 0 : 255;
           pixels.data[index] = enhanced;
           pixels.data[index + 1] = enhanced;
           pixels.data[index + 2] = enhanced;
@@ -1980,14 +1980,17 @@
         for (let row = 0; row < 3; row += 1) {
           for (let column = 0; column < 3; column += 1) {
             const cellTop = top + row * cellHeight;
-            const numberTop = cellTop + cellHeight * 0.18;
-            const numberHeight = cellHeight * 0.58;
+            const numberTop = cellTop + cellHeight * 0.16;
+            const numberHeight = cellHeight * 0.62;
+            const horizontalPadding = cellWidth * 0.04;
             const candidates = [];
             for (const threshold of [115, 145]) {
-              const canvas = createOcrCanvas(image, column * cellWidth, numberTop, cellWidth, numberHeight, threshold);
-              const result = await window.Tesseract.recognize(canvas, 'eng', { config: { tessedit_pageseg_mode: '7', tessedit_char_whitelist: '0123456789.,' } });
-              const value = getFirstNumber(result.data.text);
-              if (value !== null) candidates.push(value);
+              const canvas = createOcrCanvas(image, column * cellWidth + horizontalPadding, numberTop, cellWidth - horizontalPadding * 2, numberHeight, threshold);
+              for (const pageSegmentationMode of ['7', '8']) {
+                const result = await window.Tesseract.recognize(canvas, 'eng', { config: { tessedit_pageseg_mode: pageSegmentationMode, tessedit_char_whitelist: '0123456789.,' } });
+                const value = getFirstNumber(result.data.text);
+                if (value !== null) candidates.push(value);
+              }
             }
             const range = METRIC_OCR_RANGES[values.length];
             const validCandidates = candidates.filter((value) => value >= range[0] && value <= range[1]);
