@@ -2610,6 +2610,10 @@
         }).format(date);
       }
 
+      function formatLocalDateKey(date) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      }
+
       function renderStats(records) {
         const workoutCount = new Set(records.map(item => item.workout)).size;
         const totalSessions = records.length;
@@ -2642,7 +2646,7 @@
         return Array.from({ length: 7 }, (_, index) => {
           const date = new Date(weekStart);
           date.setDate(weekStart.getDate() + index);
-          return date.toISOString().slice(0, 10);
+          return formatLocalDateKey(date);
         });
       }
 
@@ -2656,7 +2660,7 @@
       }
 
       function getCalendarDateKey(date) {
-        return date.toISOString().slice(0, 10);
+        return formatLocalDateKey(date);
       }
 
       function renderTrainingCalendar() {
