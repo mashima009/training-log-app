@@ -428,29 +428,24 @@
 
           .stats {
             display: grid;
-            gap: 12px;
-            margin: 0 0 20px;
-          }
-
-          .stats {
-            display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 18px;
+            gap: 16px;
             margin: 0 0 20px;
           }
 
           .stat-card {
             background: linear-gradient(180deg, rgba(17, 31, 51, 0.98), rgba(7, 13, 23, 0.99));
-            border: 1px solid rgba(196, 164, 96, 0.36);
-            border-radius: 20px;
-            padding: 20px 18px 18px;
-            box-shadow: 0 14px 28px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.06);
+            border: 1px solid rgba(196, 164, 96, 0.34);
+            border-radius: 18px;
+            padding: 16px 16px 14px;
+            box-shadow: 0 12px 24px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.05);
             position: relative;
             overflow: hidden;
-            min-height: 166px;
+            min-height: 152px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            gap: 10px;
           }
 
           .stat-card::before {
@@ -462,22 +457,51 @@
             background: linear-gradient(90deg, transparent, rgba(226, 185, 79, 0.9), transparent);
           }
 
+          .stat-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+          }
+
           .stat-label {
             color: rgba(231, 237, 246, 0.96);
-            font-size: 0.82rem;
+            font-size: 0.76rem;
             line-height: 1.4;
-            margin-bottom: 14px;
-            letter-spacing: 0.02em;
+            letter-spacing: 0.04em;
             font-weight: 700;
+            text-transform: uppercase;
+          }
+
+          .stat-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 44px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: rgba(242, 189, 36, 0.08);
+            border: 1px solid rgba(242, 189, 36, 0.28);
+            color: #f9d97c;
+            font-size: 0.62rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
           }
 
           .stat-value {
-            font-size: clamp(2.2rem, 3vw, 3.6rem);
+            font-size: clamp(1.9rem, 2.6vw, 3rem);
             line-height: 1;
             font-weight: 900;
             letter-spacing: -0.06em;
             color: #fffaf0;
-            text-shadow: 0 0 18px rgba(242, 189, 36, 0.18);
+            text-shadow: 0 0 18px rgba(242, 189, 36, 0.16);
+          }
+
+          .stat-meta {
+            color: rgba(194, 210, 228, 0.82);
+            font-size: 0.73rem;
+            line-height: 1.4;
+            letter-spacing: 0.02em;
           }
 
           .layout {
@@ -2620,18 +2644,23 @@
         const totalSessions = records.length;
         const currentMonthKey = new Date().toISOString().slice(0, 7);
         const thisMonthCount = records.filter(item => item.date.startsWith(currentMonthKey)).length;
+        const latestDate = records.length ? records[0].date : null;
 
         const statsData = [
-          { label: 'セッション数', value: `${totalSessions}` },
-          { label: '種目数', value: `${workoutCount}` },
-          { label: '最終記録', value: records.length ? formatDate(records[0].date) : 'なし' },
-          { label: '今月', value: `${thisMonthCount}回` }
+          { label: 'セッション数', badge: '週', value: `${totalSessions}`, meta: `${thisMonthCount}回 / 今月` },
+          { label: '種目数', badge: '種', value: `${workoutCount}`, meta: '累積種目' },
+          { label: '最終記録', badge: '日', value: latestDate ? formatDate(latestDate) : 'なし', meta: latestDate ? '最新の更新日' : '記録待ち' },
+          { label: '今月', badge: '月', value: `${thisMonthCount}回`, meta: '今月の実績' }
         ];
 
         stats.innerHTML = statsData.map(item => `
           <div class="stat-card">
-            <div class="stat-label">${item.label}</div>
+            <div class="stat-top">
+              <div class="stat-label">${item.label}</div>
+              <span class="stat-badge">${item.badge}</span>
+            </div>
             <div class="stat-value">${item.value}</div>
+            <div class="stat-meta">${item.meta}</div>
           </div>
         `).join('');
       }
@@ -2841,16 +2870,20 @@
         const mainCategory = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0];
 
         const summaryItems = [
-          { label: 'セッション数', value: `${trainingDays}日` },
-          { label: '総重量', value: `${totalWeight}kg` },
-          { label: '総セット数', value: `${totalSets}セット` },
-          { label: '主な部位', value: mainCategory ? mainCategory[0] : '未記録' }
+          { label: 'セッション数', badge: '週', value: `${trainingDays}日`, meta: '今週の実施数' },
+          { label: '総重量', badge: 'kg', value: `${totalWeight}kg`, meta: '総負荷量' },
+          { label: '総セット数', badge: '回', value: `${totalSets}セット`, meta: '合計セット数' },
+          { label: '主な部位', badge: '部', value: mainCategory ? mainCategory[0] : '未記録', meta: '集中部位' }
         ];
 
         weekSummaryGrid.innerHTML = summaryItems.map((item) => `
           <div class="stat-card">
-            <div class="stat-label">${item.label}</div>
+            <div class="stat-top">
+              <div class="stat-label">${item.label}</div>
+              <span class="stat-badge">${item.badge}</span>
+            </div>
             <div class="stat-value">${item.value}</div>
+            <div class="stat-meta">${item.meta}</div>
           </div>
         `).join('');
 
