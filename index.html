@@ -264,190 +264,9 @@
           .line-chart { width: 100%; height: 150px; overflow: visible; }
           .line-chart-grid { stroke: rgba(148, 163, 184, 0.16); stroke-width: 1; }
           .line-chart-path { fill: none; stroke: #fbbf24; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-          .line-chart-point { fill: #f97316; stroke: #fff7d6; stroke-width: 2; }
-          .line-chart-text { fill: var(--muted); font-size: 10px; }
-
-          .history-list { display: grid; gap: 8px; }
-          .history-row { display: grid; grid-template-columns: 1fr repeat(3, auto); gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(148, 163, 184, 0.12); color: var(--muted); font-size: 0.82rem; }
-          .history-row strong { color: var(--text); }
-
-          .training-calendar {
-            display: grid;
-            grid-template-columns: minmax(0, 1.15fr) minmax(240px, 0.85fr);
-            gap: 20px;
-            align-items: start;
-          }
-
-          .calendar-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 14px;
-          }
-
-          .calendar-header h3 { margin: 0; font-size: 1rem; }
-          .calendar-controls { display: flex; gap: 6px; }
-          .calendar-controls button { padding: 8px 11px; }
-
-          .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, minmax(0, 1fr));
-            gap: 6px;
-          }
-
-          .calendar-weekday {
-            padding: 4px 0;
-            color: var(--muted);
-            font-size: 0.72rem;
-            text-align: center;
-          }
-
-          .calendar-day {
-            min-height: 52px;
-            padding: 7px 5px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            background: rgba(15, 23, 42, 0.72);
-            color: var(--muted);
-            font-size: 0.8rem;
-            text-align: left;
-          }
-
-          .calendar-day:hover { background: rgba(245, 158, 11, 0.16); }
-          .calendar-day.outside { opacity: 0.35; }
-          .calendar-day.has-record { border-color: rgba(252, 211, 77, 0.58); color: var(--text); }
-          .calendar-day.selected { background: linear-gradient(135deg, rgba(252, 211, 77, 0.9), rgba(249, 115, 22, 0.9)); color: #1c1917; }
-          .calendar-day-number { display: block; font-weight: 700; }
-          .calendar-day-mark { display: block; margin-top: 4px; color: #fbbf24; font-size: 0.68rem; }
-          .calendar-day.selected .calendar-day-mark { color: #7c2d12; }
-
-          .calendar-menu {
-            min-height: 100%;
-            padding: 16px;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            background: rgba(15, 23, 42, 0.72);
-          }
-
-          .calendar-menu h3 { margin: 0 0 10px; font-size: 1rem; }
-          .calendar-menu-list { display: grid; gap: 10px; }
-          .calendar-menu-item { padding-bottom: 10px; border-bottom: 1px solid rgba(148, 163, 184, 0.14); }
-          .calendar-menu-item:last-child { padding-bottom: 0; border-bottom: 0; }
-          .calendar-menu-item strong { display: block; margin-bottom: 4px; }
-          .calendar-menu-item span { color: var(--muted); font-size: 0.8rem; }
-
-          h1 {
-            margin: 0;
-            font-size: clamp(1.8rem, 2vw, 2.7rem);
-            font-weight: 800;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            background: linear-gradient(135deg, #fff7d6 0%, #fbbf24 25%, #f59e0b 58%, #f97316 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            text-align: center;
-            width: 100%;
-          }
-
-          .stats {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(150px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-          }
-
-          .week-summary { margin-bottom: 24px; }
-
-          .week-summary .list-header,
-          .layout .list-header {
-            padding-bottom: 12px;
-            border-bottom: 1px solid rgba(252, 211, 77, 0.16);
-          }
-
-          .list-header h2 {
-            font-size: 1.18rem;
-            letter-spacing: 0.03em;
-          }
-
-          .week-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(160px, 1fr));
-            gap: 16px;
-          }
-
-          .chart-panel { margin-top: 16px; }
-
-          .chart-box {
-            display: flex;
-            align-items: end;
-            gap: 10px;
-            min-height: 160px;
-            padding: 16px 10px 10px;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            background: linear-gradient(180deg, rgba(15, 23, 42, 0.75), rgba(17, 24, 39, 0.96));
-          }
-
-          .chart-column {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-          }
-
-          .chart-bar-wrap {
-            width: 100%;
-            min-height: 110px;
-            display: flex;
-            align-items: end;
-            justify-content: center;
-          }
-
-          .chart-bar {
-            width: 100%;
-            max-width: 28px;
-            border-radius: 10px 10px 0 0;
-            background: linear-gradient(180deg, #fef3c7 0%, #fbbf24 22%, #f59e0b 58%, #f97316 100%);
-            box-shadow: inset 0 -10px 18px rgba(255,255,255,0.16), 0 8px 16px rgba(245, 158, 11, 0.28);
-          }
-
-          .chart-label { font-size: 0.72rem; color: var(--muted); }
-
-          .chart-value {
-            font-size: 0.7rem;
-            color: var(--text);
-            font-weight: 700;
-          }
-
-          .month-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 14px;
-            margin-top: 16px;
-          }
-
-          .month-item {
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            background: rgba(17, 24, 39, 0.8);
-            padding: 12px 10px;
-          }
-
-          .month-item strong {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 0.86rem;
-          }
-
           .month-item span {
             display: block;
             color: var(--muted);
-            font-size: 0.8rem;
-            margin-bottom: 8px;
-          }
 
           .month-bar-wrap {
             width: 100%;
@@ -1222,20 +1041,6 @@
         <div class="metrics-layout">
           <section class="panel">
             <div class="list-header">
-              <h2>測定画像</h2>
-            </div>
-            <div class="image-dropzone">
-              <label for="metrics-image">TANITA FITのスクリーンショット</label>
-              <input id="metrics-image" type="file" accept="image/*" />
-              <img id="metrics-image-preview" class="image-preview" alt="アップロードした測定画像" />
-              <button class="secondary" id="read-metrics-image" type="button" disabled>画像を読み取る</button>
-              <p class="metrics-status" id="metrics-image-status">画像を添付すると、この画面で確認できます。</p>
-            </div>
-            <p class="field-hint">今回の画像から読み取った値を入力済みです。保存前に内容を確認してください。</p>
-          </section>
-
-          <section class="panel">
-            <div class="list-header">
               <h2>測定結果</h2>
             </div>
             <form id="metrics-form">
@@ -1326,7 +1131,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script>
       const STORAGE_KEY = 'training-log-app-records';
       const MEALS_KEY = 'training-log-app-meals';
@@ -1352,10 +1156,6 @@
       const dayStatus = document.getElementById('day-status');
       const COMPLETED_DATES_KEY = 'training-log-app-completed-dates';
       const metricsForm = document.getElementById('metrics-form');
-      const metricsImageInput = document.getElementById('metrics-image');
-      const metricsImagePreview = document.getElementById('metrics-image-preview');
-      const readMetricsImageButton = document.getElementById('read-metrics-image');
-      const metricsImageStatus = document.getElementById('metrics-image-status');
       const metricsStatus = document.getElementById('metrics-status');
       const METRICS_KEY = 'training-log-app-body-metrics';
       const exportDataButton = document.getElementById('export-data');
@@ -1819,24 +1619,12 @@
         document.getElementById('metric-date').value = date;
         if (!entry) {
           metricsCalendarStatus.textContent = `${formatDate(date)}の測定記録はありません。入力して保存できます。`;
-          metricsImagePreview.removeAttribute('src');
-          metricsImagePreview.classList.remove('visible');
-          metricsImageStatus.textContent = 'この日の測定画像はありません。';
           return;
         }
         Object.entries(entry.values || {}).forEach(([id, value]) => {
           const input = document.getElementById(id);
           if (input) input.value = value;
         });
-        if (entry.imageData) {
-          metricsImagePreview.src = entry.imageData;
-          metricsImagePreview.classList.add('visible');
-          metricsImageStatus.textContent = '選択した日の測定画像を表示しています。';
-        } else {
-          metricsImagePreview.removeAttribute('src');
-          metricsImagePreview.classList.remove('visible');
-          metricsImageStatus.textContent = 'この日の測定画像はありません。';
-        }
         metricsCalendarStatus.textContent = `${formatDate(date)}の測定記録を表示しています。`;
       }
 
@@ -1918,190 +1706,9 @@
         metricsHistory.innerHTML = history.map((entry) => `<div class="history-row"><strong>${entry.date}</strong><span>体重 ${entry.values['metric-weight'] || '-'}kg</span><span>体脂肪 ${entry.values['metric-body-fat'] || '-'}%</span><span>筋肉 ${entry.values['metric-muscle'] || '-'}kg</span></div>`).join('');
       }
 
-      metricsImageInput.addEventListener('change', () => {
-        const [file] = metricsImageInput.files || [];
-        if (!file) return;
-        metricsImagePreview.src = URL.createObjectURL(file);
-        metricsImagePreview.classList.add('visible');
-        readMetricsImageButton.disabled = false;
-        metricsImageStatus.textContent = `${file.name}を読み込みました。数値を確認して保存してください。`;
-      });
-
-      function normalizeOcrText(text) {
-        return text
-          .replace(/[０-９]/g, (character) => String.fromCharCode(character.charCodeAt(0) - 0xfee0))
-          .replace(/[，、]/g, ',')
-          .replace(/[．。]/g, '.')
-          .replace(/[Oo]/g, '0')
-          .replace(/[Il]/g, '1')
-          .replace(/\s+/g, ' ');
-      }
-
-      const METRIC_OCR_ORDER = [
-        ['metric-weight', 1], ['metric-bmi', 1], ['metric-body-fat', 1],
-        ['metric-visceral-fat', 0], ['metric-muscle', 1], ['metric-bone', 1],
-        ['metric-bmr', 0], ['metric-age', 0], ['metric-muscle-quality', 0]
-      ];
-
-      const METRIC_OCR_RANGES = [
-        [30, 250], [10, 50], [1, 60], [0, 30], [10, 150], [1, 10], [500, 4000], [1, 120], [0, 150]
-      ];
-
-      function getFirstNumber(text) {
-        const match = normalizeOcrText(text).match(/\d{1,5}(?:[.,]\d{1,2})?/);
-        return match ? Number(match[0].replace(',', '.')) : null;
-      }
-
-      function loadImageForOcr(file) {
-        return new Promise((resolve, reject) => {
-          const image = new Image();
-          image.onload = () => resolve(image);
-          image.onerror = reject;
-          image.src = URL.createObjectURL(file);
-        });
-      }
-
-      function createOcrCanvas(image, sx, sy, sw, sh, threshold = 145) {
-        const scale = 3;
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(sw * scale);
-        canvas.height = Math.round(sh * scale);
-        const context = canvas.getContext('2d', { willReadFrequently: true });
-        context.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-        const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
-        for (let index = 0; index < pixels.data.length; index += 4) {
-          const gray = pixels.data[index] * 0.299 + pixels.data[index + 1] * 0.587 + pixels.data[index + 2] * 0.114;
-          const enhanced = gray > threshold ? 0 : 255;
-          pixels.data[index] = enhanced;
-          pixels.data[index + 1] = enhanced;
-          pixels.data[index + 2] = enhanced;
-        }
-        context.putImageData(pixels, 0, 0);
-        return canvas;
-      }
-
-      async function readMetricCells(file, updateProgress) {
-        const image = await loadImageForOcr(file);
-        const values = [];
-        const top = image.height * 0.38;
-        const bottom = image.height * 0.94;
-        const cellHeight = (bottom - top) / 3;
-        const cellWidth = image.width / 3;
-        for (let row = 0; row < 3; row += 1) {
-          for (let column = 0; column < 3; column += 1) {
-            const cellTop = top + row * cellHeight;
-            const numberTop = cellTop + cellHeight * 0.16;
-            const numberHeight = cellHeight * 0.62;
-            const horizontalPadding = cellWidth * 0.04;
-            const candidates = [];
-            for (const threshold of [115, 145]) {
-              const canvas = createOcrCanvas(image, column * cellWidth + horizontalPadding, numberTop, cellWidth - horizontalPadding * 2, numberHeight, threshold);
-              for (const pageSegmentationMode of ['7', '8']) {
-                const result = await window.Tesseract.recognize(canvas, 'eng', { config: { tessedit_pageseg_mode: pageSegmentationMode, tessedit_char_whitelist: '0123456789.,' } });
-                const value = getFirstNumber(result.data.text);
-                if (value !== null) candidates.push(value);
-              }
-            }
-            const range = METRIC_OCR_RANGES[values.length];
-            const validCandidates = candidates.filter((value) => value >= range[0] && value <= range[1]);
-            values.push(validCandidates[0] ?? candidates[0] ?? null);
-            updateProgress(values.length, 9);
-          }
-        }
-        URL.revokeObjectURL(image.src);
-        return values;
-      }
-
-      function readMetricValue(text, patterns) {
-        for (const pattern of patterns) {
-          const match = text.match(pattern);
-          if (match) return Number(match[1].replace(',', '.'));
-        }
-        return null;
-      }
-
-      function applyOcrMetricValues(text) {
-        const normalizedText = normalizeOcrText(text);
-        const mappings = [
-          ['metric-weight', [/体重[^0-9]{0,12}(\d+(?:\.\d+)?)/i, /weight[^0-9]{0,12}(\d+(?:\.\d+)?)/i]],
-          ['metric-bmi', [/BMI[^0-9]{0,12}(\d+(?:\.\d+)?)/i]],
-          ['metric-body-fat', [/体脂肪率?[^0-9]{0,12}(\d+(?:\.\d+)?)/i, /body\s*fat[^0-9]{0,12}(\d+(?:\.\d+)?)/i]],
-          ['metric-visceral-fat', [/内臓脂肪(?:レベル)?[^0-9]{0,12}(\d+(?:\.\d+)?)/i, /visceral[^0-9]{0,12}(\d+(?:\.\d+)?)/i]],
-          ['metric-muscle', [/筋肉量[^0-9]{0,12}(\d+(?:\.\d+)?)/i, /muscle[^0-9]{0,12}(\d+(?:\.\d+)?)/i]],
-          ['metric-bone', [/推定骨量[^0-9]{0,12}(\d+(?:\.\d+)?)/i, /bone[^0-9]{0,12}(\d+(?:\.\d+)?)/i]],
-          ['metric-bmr', [/基礎代謝量[^0-9]{0,12}(\d+(?:\.\d+)?)/i, /BMR[^0-9]{0,12}(\d+(?:\.\d+)?)/i]],
-          ['metric-age', [/体内年齢[^0-9]{0,12}(\d+(?:\.\d+)?)/i, /body\s*age[^0-9]{0,12}(\d+(?:\.\d+)?)/i]],
-          ['metric-muscle-quality', [/筋質点数[^0-9]{0,12}(\d+(?:\.\d+)?)/i, /muscle\s*quality[^0-9]{0,12}(\d+(?:\.\d+)?)/i]]
-        ];
-        let appliedCount = 0;
-        mappings.forEach(([id, patterns]) => {
-          const value = readMetricValue(normalizedText, patterns);
-          const input = document.getElementById(id);
-          if (value !== null && input) {
-            input.value = value;
-            appliedCount += 1;
-          }
-        });
-        return appliedCount;
-      }
-
-      function applyOcrDate(text) {
-        const normalizedText = normalizeOcrText(text);
-        const match = normalizedText.match(/(20\d{2})\s*[-/.]\s*(\d{1,2})\s*[-/.]\s*(\d{1,2})/);
-        if (!match) return false;
-        const date = `${match[1]}-${String(match[2]).padStart(2, '0')}-${String(match[3]).padStart(2, '0')}`;
-        document.getElementById('metric-date').value = date;
-        return true;
-      }
-
-      readMetricsImageButton.addEventListener('click', async () => {
-        const [file] = metricsImageInput.files || [];
-        if (!file || !window.Tesseract) return;
-        readMetricsImageButton.disabled = true;
-        metricsImageStatus.textContent = '画像を読み取っています。少しお待ちください。';
-        try {
-          const cellValues = await readMetricCells(file, (completed, total) => {
-            metricsImageStatus.textContent = `測定値を読み取っています… ${Math.round((completed / total) * 100)}%`;
-          });
-          let appliedCount = 0;
-          cellValues.forEach((value, index) => {
-            const [id, isDecimal] = METRIC_OCR_ORDER[index];
-            const input = document.getElementById(id);
-            if (value !== null && input) {
-              input.value = isDecimal ? value.toFixed(1) : Math.round(value);
-              appliedCount += 1;
-            }
-          });
-          const fullResult = await window.Tesseract.recognize(file, 'jpn+eng', { logger: () => {} });
-          applyOcrDate(fullResult.data.text);
-          if (appliedCount < 5) appliedCount = Math.max(appliedCount, applyOcrMetricValues(fullResult.data.text));
-          metricsImageStatus.textContent = appliedCount
-            ? `${appliedCount}項目を入力しました。内容を確認して保存してください。`
-            : '数値を認識できませんでした。画像を拡大するか、手入力してください。';
-        } catch (error) {
-          console.error('Metric OCR error:', error);
-          metricsImageStatus.textContent = '画像の読み取りに失敗しました。手入力してください。';
-        } finally {
-          readMetricsImageButton.disabled = false;
-        }
-      });
-
-      function readFileAsDataUrl(file) {
-        return new Promise((resolve, reject) => {
-          if (!file) return resolve('');
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-      }
-
       metricsForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         const entry = getMetricValues();
-        entry.imageData = await readFileAsDataUrl(metricsImageInput.files?.[0]);
-        const previousEntry = getMetricHistory().find((savedEntry) => savedEntry.date === entry.date);
-        if (!entry.imageData && previousEntry?.imageData) entry.imageData = previousEntry.imageData;
         const history = getMetricHistory().filter((savedEntry) => savedEntry.date !== entry.date);
         history.push(entry);
         history.sort((a, b) => b.date.localeCompare(a.date));
