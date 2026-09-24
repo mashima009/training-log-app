@@ -1024,7 +1024,6 @@
             <p class="page-kicker">BODY DATA</p>
             <h2 class="page-title">身体データ</h2>
           </div>
-          <a class="submit-btn" href="https://tanitafit.jp/client/member/login" target="_blank" rel="noopener noreferrer">タニタフィットを開く</a>
         </div>
         <section class="panel week-summary">
           <div class="list-header"><h2>測定日カレンダー</h2></div>
@@ -1039,6 +1038,17 @@
           <p class="field-hint" id="metrics-calendar-status">測定日を選択すると、その日の画像と数値を表示します。</p>
         </section>
         <div class="metrics-layout">
+          <section class="panel">
+            <div class="list-header">
+              <h2>タニタフィット</h2>
+            </div>
+            <div class="summary-box">
+              <h3>測定結果を確認</h3>
+              <p>タニタフィットで測定結果を確認し、この画面の入力欄へ数値を入力して保存します。</p>
+              <a class="submit-btn" href="https://tanitafit.jp/client/member/login" target="_blank" rel="noopener noreferrer">タニタフィットを開く</a>
+            </div>
+            <p class="field-hint">測定日をカレンダーから選ぶと、保存済みの身体データを呼び出せます。</p>
+          </section>
           <section class="panel">
             <div class="list-header">
               <h2>測定結果</h2>
@@ -1060,7 +1070,7 @@
                 <div class="metric-card"><label for="metric-muscle-quality">筋質点数</label><input id="metric-muscle-quality" type="number" step="1" value="94" required /></div>
               </div>
               <button class="submit-btn" type="submit">身体データを保存</button>
-              <p class="day-status" id="metrics-status" aria-live="polite">スクリーンショットの内容を確認して保存してください。</p>
+              <p class="day-status" id="metrics-status" aria-live="polite">入力内容を確認して保存してください。</p>
             </form>
           </section>
         </div>
