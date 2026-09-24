@@ -8,26 +8,30 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="manifest" href="./manifest.webmanifest" />
-    <title>Training Log</title>
+    <title>TRAINING LOG</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <style>
           :root {
-            --bg: #090d14;
-            --bg-2: #111827;
-            --panel: rgba(17, 24, 39, 0.92);
-            --primary: #f59e0b;
-            --primary-strong: #f97316;
-            --text: #f8fafc;
-            --muted: #a7b1c3;
+            --bg: #03060b;
+            --bg-2: #091426;
+            --panel: rgba(9, 19, 36, 0.97);
+            --panel-strong: rgba(3, 8, 16, 0.99);
+            --primary: #f2bd24;
+            --primary-strong: #a96d06;
+            --gold-soft: #ffd34f;
+            --gold-deep: #815000;
+            --text: #fbfcff;
+            --muted: #c0cad8;
             --success: #22c55e;
             --danger: #ef4444;
-            --border: rgba(148, 163, 184, 0.18);
+            --border: rgba(112, 151, 190, 0.28);
             --shadow: 0 18px 40px rgba(0, 0, 0, 0.38);
-            --input-bg: rgba(15, 23, 42, 0.9);
-            --soft-panel: #171f2d;
-            --luxury-line: rgba(252, 211, 77, 0.28);
+            --shadow-luxe: 0 16px 36px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.04);
+            --input-bg: rgba(9, 16, 29, 0.94);
+            --soft-panel: #0b1b34;
+            --luxury-line: rgba(242, 189, 36, 0.46);
           }
 
           * { box-sizing: border-box; }
@@ -36,12 +40,14 @@
             margin: 0;
             font-family: "DM Sans", "Noto Sans JP", sans-serif;
             background:
-              radial-gradient(circle at 8% -10%, rgba(245, 158, 11, 0.2), transparent 24%),
-              radial-gradient(circle at 92% 8%, rgba(34, 197, 94, 0.08), transparent 22%),
-              linear-gradient(135deg, #080c13 0%, #0d1420 48%, #090d14 100%);
+              radial-gradient(circle at 12% -10%, rgba(242, 189, 36, 0.2), transparent 24%),
+              radial-gradient(circle at 82% 14%, rgba(24, 91, 164, 0.28), transparent 22%),
+              linear-gradient(135deg, #020409 0%, #071329 44%, #040914 100%);
             color: var(--text);
             letter-spacing: 0;
             line-height: 1.45;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
           }
 
           .container {
@@ -57,11 +63,23 @@
             gap: 16px;
             margin-bottom: 18px;
             padding: 20px 18px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(226, 185, 79, 0.28);
             border-radius: 22px;
-            background: linear-gradient(145deg, rgba(23, 32, 47, 0.96), rgba(10, 16, 26, 0.96));
+            background: linear-gradient(145deg, rgba(11, 29, 57, 0.98), rgba(3, 8, 16, 0.99));
             box-shadow: 0 20px 45px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255,255,255,0.08);
             text-align: center;
+          }
+
+          .app-header h1 {
+            margin: 0;
+            background: linear-gradient(110deg, #fff36a 0%, #ffe029 32%, #ffc400 65%, #f39a00 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-shadow: 0 0 20px rgba(255, 208, 0, 0.28);
           }
 
           .page-nav {
@@ -70,9 +88,9 @@
             gap: 6px;
             margin-bottom: 28px;
             padding: 6px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(84, 132, 181, 0.34);
             border-radius: 18px;
-            background: rgba(12, 19, 30, 0.82);
+            background: rgba(2, 7, 15, 0.96);
             position: sticky;
             top: 12px;
             z-index: 5;
@@ -89,6 +107,8 @@
             line-height: 1.25;
             border-radius: 12px;
             transition: all 0.18s ease;
+            font-weight: 700;
+            letter-spacing: 0.01em;
           }
 
           .page-nav button:hover {
@@ -97,14 +117,36 @@
           }
 
           .page-nav button.active {
-            background: linear-gradient(135deg, #fbbf24, #f97316);
-            color: #21170b;
-            box-shadow: 0 8px 18px rgba(245, 158, 11, 0.22), inset 0 1px 0 rgba(255,255,255,0.35);
-            font-weight: 800;
+            background: linear-gradient(135deg, #ffe06a 0%, #f2bd24 38%, #a96d06 100%);
+            color: #171205;
+            box-shadow: 0 8px 20px rgba(242, 189, 36, 0.34), inset 0 1px 0 rgba(255,255,255,0.55);
+            font-weight: 900;
+            letter-spacing: 0.02em;
           }
 
+          .page-nav button:nth-child(1) { --nav-accent: #f2bd24; }
+          .page-nav button:nth-child(2) { --nav-accent: #4c9bd1; }
+          .page-nav button:nth-child(3) { --nav-accent: #c8d2df; }
+          .page-nav button:nth-child(4) { --nav-accent: #6f9f78; }
+
+          .page-nav button.active {
+            background: linear-gradient(135deg, color-mix(in srgb, var(--nav-accent) 88%, white), var(--nav-accent));
+            box-shadow: 0 8px 18px color-mix(in srgb, var(--nav-accent) 28%, transparent), inset 0 1px 0 rgba(255,255,255,0.5);
+          }
+
+          .nav-icon {
+            display: inline-block;
+            margin-right: 6px;
+            color: var(--nav-accent);
+            font-size: 1.05em;
+            line-height: 1;
+            vertical-align: -0.08em;
+          }
+
+          .page-nav button.active .nav-icon { color: #101827; }
+
           .page-nav button:focus-visible {
-            outline: 3px solid rgba(252, 211, 77, 0.5);
+            outline: 3px solid rgba(255, 224, 130, 0.7);
             outline-offset: 2px;
           }
 
@@ -117,31 +159,36 @@
             align-items: end;
             justify-content: space-between;
             gap: 16px;
-            margin: 4px 0 20px;
-            padding: 4px 4px 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 4px 0 18px;
+            padding: 2px 4px 14px;
+            border-bottom: 1px solid rgba(226, 185, 79, 0.24);
           }
 
           .page-kicker {
             margin: 0 0 4px;
-            color: #fcd34d;
+            color: #ffe082;
             font-size: 0.72rem;
             font-weight: 800;
             letter-spacing: 0.16em;
             text-transform: uppercase;
           }
 
+          #workout-page .page-kicker { color: #f2bd24; }
+          #analytics-page .page-kicker { color: #5ea8dc; }
+          #metrics-page .page-kicker { color: #d4dce6; }
+          #meals-page .page-kicker { color: #80b38a; }
+
           .page-title {
             margin: 0;
             font-size: clamp(1.35rem, 2vw, 1.8rem);
-            letter-spacing: -0.02em;
-            font-weight: 800;
+            letter-spacing: -0.025em;
+            font-weight: 900;
           }
 
           .page-description {
             max-width: 360px;
             margin: 0;
-            color: var(--muted);
+            color: #d3dbe6;
             font-size: 0.82rem;
             text-align: right;
           }
@@ -271,6 +318,7 @@
           .month-item span {
             display: block;
             color: var(--muted);
+          }
 
           .month-bar-wrap {
             width: 100%;
@@ -378,14 +426,31 @@
             border-radius: 999px;
           }
 
+          .stats {
+            display: grid;
+            gap: 12px;
+            margin: 0 0 20px;
+          }
+
+          .stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 18px;
+            margin: 0 0 20px;
+          }
+
           .stat-card {
-            background: linear-gradient(180deg, rgba(17, 24, 39, 0.94), rgba(15, 23, 42, 0.9));
-            border: 1px solid var(--border);
+            background: linear-gradient(180deg, rgba(17, 31, 51, 0.96), rgba(7, 13, 23, 0.98));
+            border: 1px solid rgba(108, 151, 194, 0.34);
             border-radius: 18px;
-            padding: 18px 18px 14px;
-            box-shadow: var(--shadow);
+            padding: 18px 18px 16px;
+            box-shadow: 0 12px 24px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.04);
             position: relative;
             overflow: hidden;
+            min-height: 158px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
           }
 
           .stat-card::before {
@@ -394,18 +459,24 @@
             inset: 0 auto auto 0;
             width: 100%;
             height: 2px;
-            background: linear-gradient(90deg, transparent, rgba(252, 211, 77, 0.8), transparent);
+            background: linear-gradient(90deg, transparent, rgba(226, 185, 79, 0.9), transparent);
           }
 
           .stat-label {
-            color: var(--muted);
+            color: rgba(231, 237, 246, 0.96);
             font-size: 0.82rem;
-            margin-bottom: 10px;
+            line-height: 1.4;
+            margin-bottom: 14px;
+            letter-spacing: 0.02em;
+            font-weight: 700;
           }
 
           .stat-value {
-            font-size: clamp(1.3rem, 2vw, 2rem);
-            font-weight: 700;
+            font-size: clamp(2rem, 3vw, 3.2rem);
+            line-height: 1;
+            font-weight: 800;
+            letter-spacing: -0.05em;
+            color: #ffffff;
           }
 
           .layout {
@@ -416,10 +487,10 @@
           }
 
           .panel {
-            background: linear-gradient(160deg, rgba(22, 31, 46, 0.94), rgba(10, 15, 24, 0.96));
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: linear-gradient(160deg, rgba(17, 31, 51, 0.97), rgba(7, 12, 21, 0.98));
+            border: 1px solid rgba(226, 185, 79, 0.26);
             border-radius: 22px;
-            box-shadow: 0 18px 38px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255,255,255,0.04);
+            box-shadow: var(--shadow-luxe);
             padding: 24px;
             position: relative;
             overflow: hidden;
@@ -431,7 +502,7 @@
             inset: 0 auto auto 0;
             width: 100%;
             height: 2px;
-            background: linear-gradient(90deg, rgba(250, 204, 21, 0.08), rgba(251, 146, 60, 0.85), rgba(250, 204, 21, 0.08));
+            background: linear-gradient(90deg, rgba(226, 185, 79, 0.08), rgba(70, 132, 190, 0.85), rgba(226, 185, 79, 0.08));
           }
 
           form {
@@ -455,6 +526,18 @@
             font: inherit;
           }
 
+          select {
+            appearance: none;
+            background-image:
+              linear-gradient(45deg, transparent 50%, rgba(248, 210, 104, 0.92) 50%),
+              linear-gradient(135deg, rgba(248, 210, 104, 0.92) 50%, transparent 50%),
+              linear-gradient(180deg, rgba(17, 26, 38, 0.96), rgba(10, 15, 24, 0.92));
+            background-position: calc(100% - 18px) calc(50% - 3px), calc(100% - 12px) calc(50% - 3px), center;
+            background-size: 6px 6px, 6px 6px, 100% 100%;
+            background-repeat: no-repeat;
+            padding-right: 38px;
+          }
+
           input, select, textarea {
             width: 100%;
             padding: 12px 13px;
@@ -469,6 +552,234 @@
             outline: none;
             border-color: rgba(252, 211, 77, 0.82);
             box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.14), 0 8px 20px rgba(0,0,0,0.12);
+          }
+
+          .page .field {
+            gap: 10px;
+          }
+
+          .page .field label {
+            margin: 0;
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            color: rgba(230, 237, 247, 0.9);
+          }
+
+          .page input,
+          .page select,
+          .page textarea {
+            min-height: 46px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: linear-gradient(180deg, rgba(15, 29, 48, 0.96), rgba(7, 13, 23, 0.98));
+            border: 1px solid rgba(94, 143, 191, 0.3);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+          }
+
+          .page input::placeholder,
+          .page textarea::placeholder {
+            color: rgba(148, 163, 184, 0.76);
+          }
+
+          .page input:focus,
+          .page select:focus,
+          .page textarea:focus {
+            border-color: rgba(227, 196, 134, 0.9);
+            box-shadow: 0 0 0 3px rgba(184, 137, 74, 0.14);
+          }
+
+          .page {
+            --page-accent: #e3c486;
+            --page-accent-strong: #b8894a;
+            --page-soft-accent: rgba(227, 196, 134, 0.12);
+            --page-glow: rgba(184, 137, 74, 0.18);
+          }
+
+          .page .field label {
+            color: #f3f6fb;
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+          }
+
+          .page .field {
+            gap: 8px;
+            margin: 0;
+          }
+
+          .page input,
+          .page select,
+          .page textarea {
+            min-height: 38px;
+            padding: 8px 10px;
+            border: 1px solid rgba(94, 143, 191, 0.3);
+            background: linear-gradient(180deg, rgba(15, 29, 48, 0.96), rgba(7, 13, 23, 0.98));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+            color: #ffffff;
+            border-radius: 8px;
+          }
+
+          .page input::placeholder,
+          .page textarea::placeholder {
+            color: rgba(190, 202, 218, 0.82);
+          }
+
+          .page input:focus,
+          .page select:focus,
+          .page textarea:focus {
+            border-color: rgba(227, 196, 134, 0.9);
+            box-shadow: 0 0 0 3px rgba(184, 137, 74, 0.14), inset 0 1px 0 rgba(255,255,255,0.02);
+          }
+
+          .page .submit-btn,
+          .page .finish-btn,
+          .page .secondary,
+          .page .ghost,
+          .page button {
+            border-radius: 8px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 18px rgba(0,0,0,0.16);
+            font-weight: 800;
+            letter-spacing: 0.02em;
+          }
+
+          .page .submit-btn,
+          .page .finish-btn {
+            min-height: 42px;
+            padding: 10px 14px;
+            background: linear-gradient(135deg, #fff08a 0%, #ffd34f 38%, #e4a914 100%);
+            color: #172033;
+            border: 1px solid rgba(255, 224, 130, 0.92);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.62), 0 10px 22px rgba(226, 169, 20, 0.24);
+            text-shadow: 0 1px 0 rgba(255,255,255,0.28);
+          }
+
+          .page .submit-btn:hover,
+          .page .finish-btn:hover {
+            background: linear-gradient(135deg, #fff6ad 0%, #ffe06a 38%, #f0ba27 100%);
+            border-color: #fff08a;
+            color: #101827;
+          }
+
+          .page .secondary,
+          .page .ghost {
+            background: linear-gradient(180deg, rgba(148, 163, 184, 0.09), rgba(15, 23, 42, 0.88));
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            color: var(--text);
+          }
+
+          .page .category-chip {
+            min-height: 30px;
+            padding: 4px 9px;
+            background: rgba(148, 163, 184, 0.08);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 8px;
+            color: rgba(226, 232, 240, 0.92);
+          }
+
+          .page .category-chip input:checked + span,
+          .page .category-chip.active span {
+            color: var(--page-accent);
+          }
+
+          .page .summary-box {
+            border-color: rgba(148, 163, 184, 0.18);
+            background: linear-gradient(180deg, rgba(248, 190, 74, 0.08), rgba(15, 23, 42, 0.92));
+          }
+
+          form {
+            gap: 12px;
+          }
+
+          .page .page-intro {
+            margin-bottom: 14px;
+            padding-bottom: 12px;
+          }
+
+          .page .page-description {
+            max-width: 280px;
+          }
+
+          .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+          }
+
+          .calendar-header h3 {
+            margin: 0;
+            font-size: 1.05rem;
+            color: var(--text);
+          }
+
+          .calendar-controls {
+            display: flex;
+            gap: 8px;
+          }
+
+          .calendar-controls button {
+            min-height: 34px;
+            padding: 7px 12px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+          }
+
+          .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 6px;
+          }
+
+          .calendar-grid button {
+            min-height: 42px;
+            padding: 0;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 7px;
+            background: rgba(17, 26, 38, 0.72);
+            color: var(--text);
+            font-size: 0.8rem;
+            font-weight: 700;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+          }
+
+          .calendar-grid button.other-month {
+            opacity: 0.38;
+          }
+
+          .calendar-grid button.today {
+            background: linear-gradient(180deg, rgba(245, 158, 11, 0.16), rgba(17, 26, 38, 0.84));
+            border-color: rgba(248, 190, 74, 0.9);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+          }
+
+          .calendar-grid button.selected {
+            background: linear-gradient(135deg, #f5c76a 0%, #f4a64d 100%);
+            border-color: rgba(248, 190, 74, 0.9);
+            color: #1d160c;
+            font-weight: 900;
+            box-shadow: 0 10px 18px rgba(245, 158, 11, 0.2);
+            transform: none;
+          }
+
+          .training-calendar {
+            display: grid;
+            grid-template-columns: minmax(0, 1.3fr) minmax(200px, 0.7fr);
+            gap: 18px;
+            align-items: start;
+          }
+
+          .calendar-menu {
+            min-height: 100%;
+            border: 1px solid rgba(94, 143, 191, 0.3);
+            border-radius: 12px;
+            background: rgba(9, 16, 28, 0.7);
+            padding: 16px;
           }
 
           textarea {
@@ -618,9 +929,10 @@
 
           button {
             border: none;
-            border-radius: 13px;
+            border-radius: 12px;
             padding: 12px 14px;
-            font-weight: 700;
+            font-weight: 800;
+            letter-spacing: 0.02em;
             cursor: pointer;
             transition: transform 0.15s ease, opacity 0.15s ease;
           }
@@ -639,11 +951,11 @@
             align-items: center;
             gap: 10px;
             padding: 10px 12px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
+            border: 1px solid rgba(94, 143, 191, 0.3);
+            border-radius: 10px;
             background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(17, 24, 39, 0.8));
             color: var(--text);
-            font-size: 0.9rem;
+            font-size: 0.88rem;
           }
 
           .category-options {
@@ -769,6 +1081,96 @@
             white-space: pre-wrap;
           }
 
+          .week-summary {
+            padding: 18px 18px 20px;
+          }
+
+          #week-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            margin: 8px 0 18px;
+          }
+
+          #week-summary-grid .stat-card {
+            min-height: 126px;
+            border-radius: 12px;
+            padding: 14px 14px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: linear-gradient(180deg, rgba(21, 31, 45, 0.96), rgba(12, 18, 28, 0.96));
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255,255,255,0.03);
+          }
+
+          #week-summary-grid .stat-label {
+            font-size: 0.72rem;
+            margin-bottom: 10px;
+            color: rgba(185, 196, 214, 0.9);
+            letter-spacing: 0.04em;
+          }
+
+          #week-summary-grid .stat-value {
+            font-size: clamp(1.8rem, 2vw, 2.5rem);
+            line-height: 1.06;
+            letter-spacing: -0.05em;
+            font-weight: 800;
+          }
+
+          #week-chart {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 10px 12px;
+            align-items: end;
+            min-height: 150px;
+            padding: 6px 2px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+          }
+
+          .chart-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: end;
+            min-height: 124px;
+            gap: 6px;
+          }
+
+          .chart-value {
+            color: rgba(226, 232, 240, 0.9);
+            font-size: 0.66rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 0;
+            opacity: 0.9;
+          }
+
+          .chart-bar-wrap {
+            width: 100%;
+            height: 86px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 0 6px;
+            border-radius: 10px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(15, 23, 42, 0.18));
+          }
+
+          .chart-bar {
+            width: min(58%, 26px);
+            min-height: 8px;
+            background: linear-gradient(180deg, rgba(248, 214, 114, 1) 0%, rgba(245, 158, 11, 0.9) 42%, rgba(217, 119, 6, 0.95) 100%);
+            border-radius: 10px 10px 4px 4px;
+            box-shadow: 0 8px 16px rgba(245, 158, 11, 0.14);
+            opacity: 0.9;
+          }
+
+          .chart-label {
+            margin-top: 2px;
+            color: rgba(203, 213, 225, 0.75);
+            font-size: 0.7rem;
+            letter-spacing: 0.06em;
+            min-height: 1em;
+          }
+
           .empty {
             color: var(--muted);
             padding: 26px 0;
@@ -813,17 +1215,17 @@
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <div class="container">
       <header class="app-header">
-        <h1>Training Log</h1>
+        <h1>TRAINING LOG</h1>
       </header>
 
       <nav class="page-nav" aria-label="ページ切り替え">
-        <button class="active" type="button" data-page="workout-page">トレーニング記録</button>
-        <button type="button" data-page="analytics-page">統計・分析</button>
-        <button type="button" data-page="metrics-page">身体データ</button>
-        <button type="button" data-page="meals-page">食事記録</button>
+        <button class="active" type="button" data-page="workout-page"><span class="nav-icon" aria-hidden="true">🏋</span>トレーニング記録</button>
+        <button type="button" data-page="analytics-page"><span class="nav-icon" aria-hidden="true">▥</span>統計・分析</button>
+        <button type="button" data-page="metrics-page"><span class="nav-icon" aria-hidden="true">👤</span>身体データ</button>
+        <button type="button" data-page="meals-page"><span class="nav-icon" aria-hidden="true">🍴</span>食事記録</button>
       </nav>
 
-      <div class="page" id="workout-page">
+      <div class="page" id="workout-page" data-theme="workout">
         <div class="page-intro">
           <div>
             <p class="page-kicker">DAILY SESSION</p>
@@ -900,15 +1302,15 @@
                 <span>Google Keep / Calendar に同期する</span>
               </label>
 
-              <button class="submit-btn" type="submit">種目を追加</button>
+              <button class="submit-btn" type="submit">＋ 種目を追加</button>
               <button class="secondary" id="cancel-edit" type="button" hidden>編集をキャンセル</button>
-              <button class="finish-btn" id="finish-day" type="button">本日のトレーニングを記録する</button>
+              <button class="finish-btn" id="finish-day" type="button">✓ 本日のトレーニングを記録する</button>
               <div class="summary-box" id="day-summary-box" aria-live="polite">
                 <h3>今日の記録状況</h3>
                 <p>まだ種目がありません。</p>
               </div>
               <div class="sync-actions">
-                <button id="calendar-share" class="secondary" type="button">Calendarへ送る</button>
+                <button id="calendar-share" class="secondary" type="button">📅 Calendarへ送る</button>
                 <button id="keep-share" class="ghost" type="button">Keepへ送る</button>
               </div>
               <p class="flow-note">1. 種目を追加して記録する　→　2. 本日のトレーニングを記録する</p>
@@ -993,7 +1395,7 @@
         </section>
       </div>
 
-      <div class="page" id="meals-page" hidden>
+      <div class="page" id="meals-page" data-theme="meals" hidden>
         <div class="page-intro">
           <div>
             <p class="page-kicker">NUTRITION LOG</p>
@@ -1009,9 +1411,9 @@
               <div class="field"><label for="meal-type">食事区分</label><select id="meal-type"><option>朝食</option><option>昼食</option><option>夕食</option><option>間食</option></select></div>
               <div class="field"><label for="meal-name">内容</label><input id="meal-name" type="text" placeholder="例: 鶏むね肉とご飯" required /></div>
               <div class="field"><label for="meal-notes">メモ</label><textarea id="meal-notes" placeholder="食事のメモや体調"></textarea></div>
-              <button class="submit-btn" type="submit" id="meal-submit">食事を追加</button>
+              <button class="submit-btn" type="submit" id="meal-submit">＋ 食事を追加</button>
               <button class="secondary" type="button" id="meal-cancel" hidden>編集をキャンセル</button>
-              <button class="secondary" type="button" id="meal-calendar-share">Googleカレンダーへ送る</button>
+              <button class="secondary" type="button" id="meal-calendar-share">📅 Googleカレンダーへ送る</button>
               <p class="day-status" id="meal-status" aria-live="polite">食事を記録すると、右側に一覧が表示されます。</p>
             </form>
           </aside>
@@ -1023,7 +1425,7 @@
         </div>
       </div>
 
-      <div class="page" id="metrics-page" hidden>
+      <div class="page" id="metrics-page" data-theme="metrics" hidden>
         <div class="page-intro">
           <div>
             <p class="page-kicker">BODY DATA</p>
@@ -1050,7 +1452,7 @@
             <div class="summary-box">
               <h3>測定結果を確認</h3>
               <p>タニタフィットで測定結果を確認し、この画面の入力欄へ数値を入力して保存します。</p>
-              <a class="submit-btn" href="https://tanitafit.jp/client/member/login" target="_blank" rel="noopener noreferrer">タニタフィットを開く</a>
+              <a class="submit-btn" href="https://tanitafit.jp/client/member/login" target="_blank" rel="noopener noreferrer">↗ タニタフィットを開く</a>
             </div>
             <p class="field-hint">測定日をカレンダーから選ぶと、保存済みの身体データを呼び出せます。</p>
           </section>
@@ -1074,7 +1476,7 @@
                 <div class="metric-card"><label for="metric-age">体内年齢（才）</label><input id="metric-age" type="number" step="1" value="20" required /></div>
                 <div class="metric-card"><label for="metric-muscle-quality">筋質点数</label><input id="metric-muscle-quality" type="number" step="1" value="94" required /></div>
               </div>
-              <button class="submit-btn" type="submit">身体データを保存</button>
+              <button class="submit-btn" type="submit">✓ 身体データを保存</button>
               <p class="day-status" id="metrics-status" aria-live="polite">入力内容を確認して保存してください。</p>
             </form>
           </section>
@@ -1984,7 +2386,7 @@
 
       function resetEditMode() {
         editingRecordId = null;
-        submitButton.textContent = '種目を追加';
+        submitButton.textContent = '＋ 種目を追加';
         cancelEditButton.hidden = true;
         form.reset();
         renderSetFields();
@@ -2017,7 +2419,7 @@
           if (repsInput) repsInput.value = set.reps ?? '';
           if (restInput) restInput.value = String(set.restTime || 60);
         });
-        submitButton.textContent = '記録を更新';
+        submitButton.textContent = '✓ 記録を更新';
         cancelEditButton.hidden = false;
         updateDayStatus();
         form.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2084,7 +2486,7 @@
           <article class="meal-item">
             <div class="meal-item-top"><span class="meal-item-title">${meal.mealType} / ${meal.name}</span><span>${meal.startTime}～${meal.endTime}</span></div>
             ${meal.notes ? `<div class="meal-item-notes">${meal.notes}</div>` : ''}
-            <div style="margin-top: 12px; display: flex; justify-content: flex-end; gap: 8px;"><button class="secondary meal-calendar-share meal-calendar-item" data-meal-id="${meal.id}" type="button">カレンダーへ</button><button class="secondary meal-edit-btn" data-meal-id="${meal.id}" type="button">編集</button><button class="delete-btn meal-delete-btn" data-meal-id="${meal.id}" type="button">削除</button></div>
+            <div style="margin-top: 12px; display: flex; justify-content: flex-end; gap: 8px;"><button class="secondary meal-calendar-share meal-calendar-item" data-meal-id="${meal.id}" type="button">📅 カレンダーへ</button><button class="secondary meal-edit-btn" data-meal-id="${meal.id}" type="button">編集</button><button class="delete-btn meal-delete-btn" data-meal-id="${meal.id}" type="button">削除</button></div>
           </article>
         `).join('') : '<div class="empty">この日の食事記録はありません。</div>';
       }
@@ -2095,7 +2497,7 @@
         mealDateInput.valueAsDate = new Date();
         mealStartTimeInput.value = getCurrentTime();
         mealEndTimeInput.value = getTimeAfter(30);
-        mealSubmitButton.textContent = '食事を追加';
+        mealSubmitButton.textContent = '＋ 食事を追加';
         mealCancelButton.hidden = true;
         mealStatus.textContent = '食事を記録すると、右側に一覧が表示されます。';
         renderMeals();
@@ -2170,7 +2572,7 @@
           mealTypeInput.value = meal.mealType;
           mealNameInput.value = meal.name;
           mealNotesInput.value = meal.notes || '';
-          mealSubmitButton.textContent = '食事を更新';
+          mealSubmitButton.textContent = '✓ 食事を更新';
           mealCancelButton.hidden = false;
           mealForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
           return;
@@ -2211,12 +2613,14 @@
       function renderStats(records) {
         const workoutCount = new Set(records.map(item => item.workout)).size;
         const totalSessions = records.length;
+        const currentMonthKey = new Date().toISOString().slice(0, 7);
+        const thisMonthCount = records.filter(item => item.date.startsWith(currentMonthKey)).length;
 
         const statsData = [
           { label: 'セッション数', value: `${totalSessions}` },
           { label: '種目数', value: `${workoutCount}` },
           { label: '最終記録', value: records.length ? formatDate(records[0].date) : 'なし' },
-          { label: '今月', value: records.filter(item => item.date.startsWith(new Date().toISOString().slice(0, 7))).length + '回' }
+          { label: '今月', value: `${thisMonthCount}回` }
         ];
 
         stats.innerHTML = statsData.map(item => `
