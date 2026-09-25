@@ -923,6 +923,30 @@
 
           .summary-box strong { font-weight: 700; }
 
+          .rest-day-box {
+            margin-top: 10px;
+            padding: 12px 14px;
+            border: 1px solid rgba(94, 143, 191, 0.3);
+            border-radius: 12px;
+            background: linear-gradient(180deg, rgba(76, 155, 209, 0.1), rgba(15, 23, 42, 0.86));
+          }
+
+          .rest-day-box.is-active {
+            border-color: rgba(94, 168, 220, 0.76);
+            background: linear-gradient(180deg, rgba(76, 155, 209, 0.2), rgba(15, 23, 42, 0.92));
+          }
+
+          .rest-day-box strong { display: block; margin-bottom: 4px; color: #b9ddf6; }
+          .rest-day-box p { margin: 0; color: var(--muted); font-size: 0.78rem; }
+
+          .calendar-grid button.rest-day {
+            background: linear-gradient(135deg, rgba(76, 155, 209, 0.44), rgba(15, 23, 42, 0.84));
+            border-color: rgba(94, 168, 220, 0.82);
+            color: #dff3ff;
+          }
+
+          .calendar-grid button.rest-day .calendar-day-mark { color: #b9ddf6; }
+
           .sync-actions {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -1330,6 +1354,11 @@
               <button class="submit-btn" type="submit">＋ 種目を追加</button>
               <button class="secondary" id="cancel-edit" type="button" hidden>編集をキャンセル</button>
               <button class="finish-btn" id="finish-day" type="button">✓ 本日のトレーニングを記録する</button>
+              <button class="secondary" id="rest-day-toggle" type="button">休養日に設定する</button>
+              <div class="rest-day-box" id="rest-day-box" aria-live="polite">
+                <strong>休養日の設定</strong>
+                <p>トレーニングをしない日もカレンダーに記録できます。</p>
+              </div>
               <div class="summary-box" id="day-summary-box" aria-live="polite">
                 <h3>今日の記録状況</h3>
                 <p>まだ種目がありません。</p>
@@ -1593,10 +1622,13 @@
       const submitButton = form.querySelector('.submit-btn');
       const cancelEditButton = document.getElementById('cancel-edit');
       const finishDayButton = document.getElementById('finish-day');
+      const restDayToggle = document.getElementById('rest-day-toggle');
+      const restDayBox = document.getElementById('rest-day-box');
       const calendarShareButton = document.getElementById('calendar-share');
       const keepShareButton = document.getElementById('keep-share');
       const dayStatus = document.getElementById('day-status');
       const COMPLETED_DATES_KEY = 'training-log-app-completed-dates';
+      const REST_DATES_KEY = 'training-log-app-rest-dates';
       const metricsForm = document.getElementById('metrics-form');
       const metricsStatus = document.getElementById('metrics-status');
       const METRICS_KEY = 'training-log-app-body-metrics';
@@ -1916,6 +1948,7 @@
           records: getRecords(),
           meals: getMeals(),
           completedDates: getCompletedDates(),
+          restDates: getRestDates(),
           bodyMetrics: getMetricHistory()
         };
       }
@@ -1924,13 +1957,14 @@
         const recordCount = getRecords().length;
         const metricCount = getMetricHistory().length;
         const completedCount = getCompletedDates().length;
+        const restCount = getRestDates().length;
         const modeText = isSupabaseConfigured() ? '保存先: Supabase' : '保存先: ローカル';
-        storageSummary.textContent = `${modeText} / トレーニング記録 ${recordCount}件 / 身体データ ${metricCount}件 / 完了日 ${completedCount}日`;
+        storageSummary.textContent = `${modeText} / トレーニング記録 ${recordCount}件 / 身体データ ${metricCount}件 / 完了日 ${completedCount}日 / 休養日 ${restCount}日`;
         syncStatus.textContent = isSupabaseConfigured() ? 'Supabase設定済み。同期状態は最新の操作時に更新されます。' : 'Supabase未設定。現在はこの端末に保存しています。';
       }
 
       function isValidBackup(data) {
-        return data && typeof data === 'object' && Array.isArray(data.records) && (!data.meals || Array.isArray(data.meals)) && Array.isArray(data.completedDates) && Array.isArray(data.bodyMetrics) && data.records.every((record) => record && typeof record === 'object' && typeof record.date === 'string' && typeof record.workout === 'string');
+        return data && typeof data === 'object' && Array.isArray(data.records) && (!data.meals || Array.isArray(data.meals)) && Array.isArray(data.completedDates) && (!data.restDates || Array.isArray(data.restDates)) && Array.isArray(data.bodyMetrics) && data.records.every((record) => record && typeof record === 'object' && typeof record.date === 'string' && typeof record.workout === 'string');
       }
 
       exportDataButton.addEventListener('click', () => {
@@ -1964,6 +1998,7 @@
           saveRecords(data.records);
           saveMeals(data.meals || []);
           saveCompletedDates(data.completedDates);
+          saveRestDates(data.restDates || []);
           localStorage.setItem(METRICS_KEY, JSON.stringify(data.bodyMetrics));
           renderRecords();
           renderWeeklySummary();
@@ -1982,6 +2017,7 @@
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem(MEALS_KEY);
         localStorage.removeItem(COMPLETED_DATES_KEY);
+        localStorage.removeItem(REST_DATES_KEY);
         localStorage.removeItem(METRICS_KEY);
         renderRecords();
         renderWeeklySummary();
@@ -2268,6 +2304,23 @@
         localStorage.setItem(COMPLETED_DATES_KEY, JSON.stringify(dates));
       }
 
+      function getRestDates() {
+        try {
+          const dates = JSON.parse(localStorage.getItem(REST_DATES_KEY) || '[]');
+          return Array.isArray(dates) ? dates : [];
+        } catch (error) {
+          return [];
+        }
+      }
+
+      function saveRestDates(dates) {
+        localStorage.setItem(REST_DATES_KEY, JSON.stringify([...new Set(dates)].sort()));
+      }
+
+      function isRestDay(date) {
+        return Boolean(date) && getRestDates().includes(date);
+      }
+
       function getRecordsForDate(date) {
         return getRecords().filter((record) => record.date === date);
       }
@@ -2321,9 +2374,15 @@
         const records = date ? getRecordsForDate(date) : [];
         const summaryBox = document.getElementById('day-summary-box');
         const completed = date && getCompletedDates().includes(date);
+        const restDay = isRestDay(date);
 
         if (!date) {
           summaryBox.innerHTML = '<h3>今日の記録状況</h3><p>日付を選択してください。</p>';
+          return;
+        }
+
+        if (restDay && !records.length) {
+          summaryBox.innerHTML = '<h3>休養日</h3><p>この日は休養日として設定されています。</p>';
           return;
         }
 
@@ -2349,10 +2408,19 @@
         const date = dateInput.value;
         const completed = date && getCompletedDates().includes(date);
         const dayRecords = date ? getRecordsForDate(date) : [];
+        const restDay = isRestDay(date);
 
-        submitButton.disabled = completed && !editingRecordId;
-        finishDayButton.disabled = !date || completed || dayRecords.length === 0;
-        dayStatus.textContent = completed
+        submitButton.disabled = restDay || (completed && !editingRecordId);
+        finishDayButton.disabled = !date || restDay || completed || dayRecords.length === 0;
+        restDayToggle.disabled = !date || completed || dayRecords.length > 0;
+        restDayToggle.textContent = restDay ? '休養日を解除する' : '休養日に設定する';
+        restDayBox.classList.toggle('is-active', restDay);
+        restDayBox.querySelector('p').textContent = restDay
+          ? `${formatDate(date)}は休養日です。トレーニングを記録する場合は、先に解除してください。`
+          : 'トレーニングをしない日もカレンダーに記録できます。';
+        dayStatus.textContent = restDay
+          ? `${formatDate(date)}は休養日に設定されています。`
+          : completed
           ? `${formatDate(date)}のトレーニングは記録済みです。`
           : dayRecords.length
             ? '記録を追加すると、同じ日に続けて種目を登録できます。'
@@ -2615,6 +2683,7 @@
           records,
           meals: getMeals(),
           completedDates: getCompletedDates(),
+          restDates: getRestDates(),
           bodyMetrics: getMetricHistory()
         };
       }
@@ -2697,6 +2766,7 @@
         if (!calendarMonthLabel || !calendarGrid || !calendarMenu) return;
 
         const records = getRecords();
+        const restDates = new Set(getRestDates());
         const recordDates = new Set(records.map((record) => record.date));
         const year = calendarMonth.getFullYear();
         const month = calendarMonth.getMonth();
@@ -2721,11 +2791,13 @@
           const shade = Math.min(0.18 + dayVolume / 2000, 0.82);
           const isOutside = date.getMonth() !== month;
           const isSelected = dateKey === selectedCalendarDate;
+          const isRest = restDates.has(dateKey);
           const classes = ['calendar-day'];
           if (isOutside) classes.push('outside');
           if (dayRecords.length) classes.push('has-record');
+          if (isRest) classes.push('rest-day');
           if (isSelected) classes.push('selected');
-          const mark = dayRecords.length ? `${dayRecords.length}件` : dateKey === today ? '今日' : '';
+          const mark = isRest ? '休養' : dayRecords.length ? `${dayRecords.length}件` : dateKey === today ? '今日' : '';
           calendarGrid.insertAdjacentHTML('beforeend', `
             <button class="${classes.join(' ')}" type="button" data-calendar-date="${dateKey}" style="${dayRecords.length ? `background: linear-gradient(135deg, ${dayColor}${Math.round(shade * 255).toString(16).padStart(2, '0')}, rgba(15, 23, 42, 0.78));` : ''}">
               <span class="calendar-day-number">${date.getDate()}</span>
@@ -2739,6 +2811,11 @@
 
       function renderCalendarMenu(date, records = getRecords()) {
         const dayRecords = records.filter((record) => record.date === date);
+        if (isRestDay(date) && !dayRecords.length) {
+          const restLabel = new Intl.DateTimeFormat('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' }).format(new Date(`${date}T00:00:00`));
+          calendarMenu.innerHTML = `<h3>${restLabel}</h3><p class="field-hint">休養日に設定されています。</p>`;
+          return;
+        }
         const label = new Intl.DateTimeFormat('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' }).format(new Date(`${date}T00:00:00`));
         calendarMenu.innerHTML = dayRecords.length
           ? `<h3>${label}のメニュー</h3><div class="calendar-menu-list">${dayRecords.map((record) => `<div class="calendar-menu-item"><strong>${record.workout}</strong><span>${record.category?.length ? record.category.join(' / ') : '未分類'} / ${record.setDetails?.length || record.sets || 0}セット / ${record.totalWeight || 0}kg</span></div>`).join('')}</div>`
@@ -3258,6 +3335,25 @@
 
         updateDayStatus();
         await syncToGoogle(summary);
+      });
+
+      restDayToggle.addEventListener('click', () => {
+        const date = dateInput.value;
+        const records = getRecordsForDate(date);
+        if (!date || records.length) return;
+
+        const restDates = getRestDates();
+        if (restDates.includes(date)) {
+          saveRestDates(restDates.filter((savedDate) => savedDate !== date));
+          showToast('休養日の設定を解除しました。');
+        } else {
+          saveRestDates([...restDates, date]);
+          showToast('休養日に設定しました。');
+        }
+        updateDayStatus();
+        renderTrainingCalendar();
+        renderWeeklySummary();
+        renderStorageSummary();
       });
 
       calendarShareButton.addEventListener('click', async () => {
