@@ -82,9 +82,38 @@
             text-shadow: 0 0 20px rgba(255, 208, 0, 0.28);
           }
 
+          .account-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: -10px 0 18px;
+            color: var(--muted);
+            font-size: 0.78rem;
+          }
+
+          .account-bar strong { color: #f9d97c; }
+
+          .auth-panel {
+            max-width: 520px;
+            margin: 0 auto 24px;
+          }
+
+          .auth-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+          }
+
+          .auth-status { min-height: 1.5em; margin: 0; color: var(--muted); font-size: 0.82rem; }
+
+          @media (max-width: 520px) {
+            .auth-actions { grid-template-columns: 1fr; }
+          }
+
           .page-nav {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 8px;
             margin-bottom: 30px;
             padding: 8px;
@@ -1435,12 +1464,17 @@
       <header class="app-header">
         <h1>TRAINING LOG</h1>
       </header>
+      <div class="account-bar" aria-live="polite">
+        <span id="account-status">ローカルモード</span>
+        <button class="secondary" id="account-signout" type="button" hidden>ログアウト</button>
+      </div>
 
       <nav class="page-nav" aria-label="ページ切り替え">
         <button class="active" type="button" data-page="workout-page"><span class="nav-icon" aria-hidden="true">🏋</span>トレーニング記録</button>
         <button type="button" data-page="analytics-page"><span class="nav-icon" aria-hidden="true">▥</span>統計・分析</button>
         <button type="button" data-page="metrics-page"><span class="nav-icon" aria-hidden="true">👤</span>身体データ</button>
         <button type="button" data-page="meals-page"><span class="nav-icon" aria-hidden="true">🍴</span>食事記録</button>
+        <button type="button" data-page="management-page"><span class="nav-icon" aria-hidden="true">⚙</span>アカウント</button>
       </nav>
 
       <div class="page" id="workout-page" data-theme="workout">
@@ -1721,6 +1755,26 @@
 
       <div class="page" id="management-page" hidden>
         <div class="management-grid">
+          <section class="panel auth-panel">
+            <div class="list-header">
+              <h2>アカウント登録・ログイン</h2>
+            </div>
+            <form id="auth-form">
+              <div class="field">
+                <label for="auth-email">メールアドレス</label>
+                <input id="auth-email" type="email" autocomplete="email" required />
+              </div>
+              <div class="field">
+                <label for="auth-password">パスワード（6文字以上）</label>
+                <input id="auth-password" type="password" autocomplete="current-password" minlength="6" required />
+              </div>
+              <div class="auth-actions">
+                <button class="submit-btn" id="auth-signup" type="button">アカウント登録</button>
+                <button class="secondary" id="auth-login" type="submit">ログイン</button>
+              </div>
+              <p class="auth-status" id="auth-status" aria-live="polite">Supabase設定後にアカウントを登録できます。</p>
+            </form>
+          </section>
           <section class="panel">
             <div class="list-header">
               <h2>Supabase 接続</h2>
@@ -1856,8 +1910,59 @@
       const supabaseAnonKeyInput = document.getElementById('supabase-anon-key');
       const supabaseStatus = document.getElementById('supabase-status');
       const clearSupabaseConfigButton = document.getElementById('clear-supabase-config');
+      const authForm = document.getElementById('auth-form');
+      const authEmailInput = document.getElementById('auth-email');
+      const authPasswordInput = document.getElementById('auth-password');
+      const authSignupButton = document.getElementById('auth-signup');
+      const authStatus = document.getElementById('auth-status');
+      const accountStatus = document.getElementById('account-status');
+      const accountSignoutButton = document.getElementById('account-signout');
 
       let supabaseClient = null;
+      let currentUser = null;
+      let supabaseClientConfigSignature = '';
+      let supabaseAuthSubscription = null;
+
+      function getCurrentUserId() {
+        return currentUser?.id || DEFAULT_USER_ID;
+      }
+
+      function getCurrentUserEmail() {
+        return currentUser?.email || '';
+      }
+
+      function getScopedStorageKey(key) {
+        return currentUser ? `${key}:${currentUser.id}` : key;
+      }
+
+      function migrateLegacyLocalDataForUser() {
+        if (!currentUser) return;
+        const migrationKey = `training-log-app-account-migrated:${currentUser.id}`;
+        if (localStorage.getItem(migrationKey)) return;
+
+        const keys = [STORAGE_KEY, MEALS_KEY, COMPLETED_DATES_KEY, REST_DATES_KEY, METRICS_KEY];
+        const hasLegacyData = keys.some((key) => localStorage.getItem(key));
+        const hasAccountData = keys.some((key) => localStorage.getItem(`${key}:${currentUser.id}`));
+        if (hasLegacyData && !hasAccountData && confirm('この端末に保存されている既存データを、現在のアカウントへ取り込みますか？')) {
+          const copyLegacyData = (key) => {
+            const value = localStorage.getItem(key);
+            if (value !== null) localStorage.setItem(`${key}:${currentUser.id}`, value);
+          };
+          keys.forEach(copyLegacyData);
+          const autoBackup = localStorage.getItem(AUTO_BACKUP_KEY);
+          if (autoBackup) localStorage.setItem(`${AUTO_BACKUP_KEY}:${currentUser.id}`, autoBackup);
+          const categories = localStorage.getItem(LAST_CATEGORIES_KEY);
+          if (categories) localStorage.setItem(`${LAST_CATEGORIES_KEY}:${currentUser.id}`, categories);
+        }
+        localStorage.setItem(migrationKey, 'complete');
+      }
+
+      function updateAccountStatus() {
+        const email = getCurrentUserEmail();
+        accountStatus.textContent = email ? `ログイン中: ${email}` : isSupabaseConfigured() ? '未ログイン' : 'ローカルモード';
+        accountSignoutButton.hidden = !email;
+        authStatus.textContent = email ? `${email}の個人データを使用中です。` : isSupabaseConfigured() ? 'アカウント登録またはログインしてください。' : 'Supabase設定後にアカウントを登録できます。';
+      }
 
       function showToast(message) {
         toast.textContent = message;
@@ -1879,7 +1984,7 @@
 
       function restoreLastCategories() {
         try {
-          const categories = JSON.parse(localStorage.getItem(LAST_CATEGORIES_KEY) || '[]');
+          const categories = JSON.parse(localStorage.getItem(getScopedStorageKey(LAST_CATEGORIES_KEY)) || '[]');
           form.querySelectorAll('input[name="category"]').forEach((input) => { input.checked = categories.includes(input.value); });
         } catch (error) { }
       }
@@ -1903,17 +2008,44 @@
 
       function initSupabaseClient() {
         if (!window.supabase) {
+          supabaseAuthSubscription?.unsubscribe();
+          supabaseAuthSubscription = null;
           supabaseClient = null;
           return null;
         }
 
         if (!isSupabaseConfigured()) {
+          supabaseAuthSubscription?.unsubscribe();
+          supabaseAuthSubscription = null;
           supabaseClient = null;
+          supabaseClientConfigSignature = '';
           return null;
         }
 
         const config = getSupabaseConfig();
+        const configSignature = `${config.url}:${config.anonKey}`;
+        if (supabaseClient && supabaseClientConfigSignature === configSignature) return supabaseClient;
+        supabaseAuthSubscription?.unsubscribe();
         supabaseClient = window.supabase.createClient(config.url, config.anonKey);
+        supabaseClientConfigSignature = configSignature;
+        const { data } = supabaseClient.auth.onAuthStateChange((event, session) => {
+          currentUser = session?.user || null;
+          updateAccountStatus();
+          if (event === 'INITIAL_SESSION') return;
+          window.setTimeout(async () => {
+            if (currentUser) {
+              migrateLegacyLocalDataForUser();
+              await syncSupabaseToLocal();
+            }
+            restoreLastCategories();
+            renderRecords();
+            renderWeeklySummary();
+            renderMeals();
+            await loadMetricValues();
+            renderStorageSummary();
+          }, 0);
+        });
+        supabaseAuthSubscription = data.subscription;
         return supabaseClient;
       }
 
@@ -1922,11 +2054,43 @@
         supabaseUrlInput.value = config.url || '';
         supabaseAnonKeyInput.value = config.anonKey || '';
         if (isSupabaseConfigured()) {
-          supabaseStatus.textContent = 'Supabase 接続が設定済みです。保存されたデータは Supabase に同期されます。';
+          supabaseStatus.textContent = 'Supabase設定済みです。個人データの同期にはアカウント登録またはログインが必要です。';
         } else {
           supabaseStatus.textContent = 'Supabase を使う場合は URL と anon key を設定してください。';
         }
+        updateAccountStatus();
       }
+
+      async function signUpAccount() {
+        if (!authForm.reportValidity()) return;
+        const client = initSupabaseClient();
+        if (!client) {
+          authStatus.textContent = '先にSupabase URLとanon keyを保存してください。';
+          return;
+        }
+        const { error } = await client.auth.signUp({ email: authEmailInput.value.trim(), password: authPasswordInput.value });
+        authStatus.textContent = error ? `登録に失敗しました: ${error.message}` : '登録しました。確認メールが届いた場合は、確認後にログインしてください。';
+      }
+
+      authSignupButton.addEventListener('click', signUpAccount);
+      authForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const client = initSupabaseClient();
+        if (!client) {
+          authStatus.textContent = '先にSupabase URLとanon keyを保存してください。';
+          return;
+        }
+        const { error } = await client.auth.signInWithPassword({ email: authEmailInput.value.trim(), password: authPasswordInput.value });
+        authStatus.textContent = error ? `ログインに失敗しました: ${error.message}` : 'ログインしました。個人データを読み込んでいます。';
+      });
+
+      accountSignoutButton.addEventListener('click', async () => {
+        if (!supabaseClient) return;
+        await supabaseClient.auth.signOut();
+        currentUser = null;
+        updateAccountStatus();
+        authStatus.textContent = 'ログアウトしました。';
+      });
 
       supabaseForm.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -1938,37 +2102,50 @@
         }
 
         saveSupabaseConfig({ url, anonKey });
+        supabaseClient = null;
+        supabaseClientConfigSignature = '';
+        currentUser = null;
         initSupabaseClient();
         if (!isSupabaseConfigured()) {
           supabaseStatus.textContent = '設定の保存に失敗しました。';
           return;
         }
 
-        const synced = await syncSupabaseToLocal();
-        supabaseStatus.textContent = synced
-          ? 'Supabase の設定を保存し、データを同期しました。'
-          : 'Supabaseへ接続できませんでした。URL・anon key・テーブル設定を確認してください。';
+        const { error } = await supabaseClient.auth.getSession();
+        supabaseStatus.textContent = error
+          ? 'Supabaseへ接続できませんでした。URLとanon keyを確認してください。'
+          : 'Supabase設定を保存しました。アカウント登録またはログインしてください。';
+        updateAccountStatus();
       });
 
       clearSupabaseConfigButton.addEventListener('click', () => {
         saveSupabaseConfig({ url: '', anonKey: '' });
+        supabaseAuthSubscription?.unsubscribe();
+        supabaseAuthSubscription = null;
         supabaseClient = null;
+        supabaseClientConfigSignature = '';
+        currentUser = null;
         loadSupabaseConfigInputs();
+        restoreLastCategories();
+        renderRecords();
+        renderWeeklySummary();
+        renderMeals();
+        loadMetricValues();
         renderStorageSummary();
         supabaseStatus.textContent = 'Supabase の設定を解除しました。ローカル保存に戻ります。';
       });
 
       async function syncSupabaseToLocal() {
         const client = initSupabaseClient();
-        if (!client) {
-          syncStatus.textContent = 'Supabase未設定。ローカル保存を使用中です。';
+        if (!client || !currentUser) {
+          syncStatus.textContent = isSupabaseConfigured() ? '未ログインのためローカル保存を使用中です。' : 'Supabase未設定。ローカル保存を使用中です。';
           return false;
         }
 
         const { data, error } = await client
           .from('workouts')
           .select('*, workout_sets(*)')
-          .eq('user_id', DEFAULT_USER_ID)
+          .eq('user_id', getCurrentUserId())
           .order('date', { ascending: false });
 
         if (error) {
@@ -2010,11 +2187,11 @@
 
       async function persistWorkoutRecord(record) {
         const client = initSupabaseClient();
-        if (!client) return;
+        if (!client || !currentUser) return;
 
         const payload = {
           id: record.id,
-          user_id: DEFAULT_USER_ID,
+          user_id: getCurrentUserId(),
           date: record.date,
           workout_name: record.workout,
           categories: Array.isArray(record.category) ? record.category : [record.category].filter(Boolean),
@@ -2034,7 +2211,7 @@
         const existingSets = (record.setDetails || []).map((set, index) => ({
           id: `${record.id}-${index + 1}`,
           workout_id: record.id,
-          user_id: DEFAULT_USER_ID,
+          user_id: getCurrentUserId(),
           set_index: index + 1,
           weight: Number(set.weight || 0),
           weight_type: set.weight === '自重' ? 'bodyweight' : 'kg',
@@ -2057,11 +2234,11 @@
 
       async function persistMetricHistory(history) {
         const client = initSupabaseClient();
-        if (!client) return;
+        if (!client || !currentUser) return;
 
         const upserts = history.map((entry) => ({
-          id: `metric-${entry.date}`,
-          user_id: DEFAULT_USER_ID,
+          id: `metric-${getCurrentUserId()}-${entry.date}`,
+          user_id: getCurrentUserId(),
           date: entry.date,
           metric_values: entry.values || {},
           image_url: null,
@@ -2078,12 +2255,12 @@
 
       async function fetchMetricHistoryFromSupabase() {
         const client = initSupabaseClient();
-        if (!client) return [];
+        if (!client || !currentUser) return [];
 
         const { data, error } = await client
           .from('body_metrics')
           .select('*')
-          .eq('user_id', DEFAULT_USER_ID)
+          .eq('user_id', getCurrentUserId())
           .order('date', { ascending: false });
 
         if (error) {
@@ -2153,7 +2330,7 @@
       });
 
       downloadAutoBackupButton.addEventListener('click', () => {
-        downloadFile(localStorage.getItem(AUTO_BACKUP_KEY) || JSON.stringify(buildBackup(), null, 2), `training-log-auto-backup-${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
+        downloadFile(localStorage.getItem(getScopedStorageKey(AUTO_BACKUP_KEY)) || JSON.stringify(buildBackup(), null, 2), `training-log-auto-backup-${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
         backupStatus.textContent = '自動バックアップJSONを保存しました。';
       });
 
@@ -2168,7 +2345,7 @@
           saveMeals(data.meals || []);
           saveCompletedDates(data.completedDates);
           saveRestDates(data.restDates || []);
-          localStorage.setItem(METRICS_KEY, JSON.stringify(data.bodyMetrics));
+          localStorage.setItem(getScopedStorageKey(METRICS_KEY), JSON.stringify(data.bodyMetrics));
           renderRecords();
           renderWeeklySummary();
           loadMetricValues();
@@ -2183,11 +2360,11 @@
 
       clearDataButton.addEventListener('click', () => {
         if (!confirm('トレーニング記録と身体データをすべて削除します。この操作は戻せません。')) return;
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem(MEALS_KEY);
-        localStorage.removeItem(COMPLETED_DATES_KEY);
-        localStorage.removeItem(REST_DATES_KEY);
-        localStorage.removeItem(METRICS_KEY);
+        localStorage.removeItem(getScopedStorageKey(STORAGE_KEY));
+        localStorage.removeItem(getScopedStorageKey(MEALS_KEY));
+        localStorage.removeItem(getScopedStorageKey(COMPLETED_DATES_KEY));
+        localStorage.removeItem(getScopedStorageKey(REST_DATES_KEY));
+        localStorage.removeItem(getScopedStorageKey(METRICS_KEY));
         renderRecords();
         renderWeeklySummary();
         loadMetricValues();
@@ -2205,7 +2382,7 @@
 
       function getMetricHistory() {
         try {
-          const saved = JSON.parse(localStorage.getItem(METRICS_KEY) || '[]');
+          const saved = JSON.parse(localStorage.getItem(getScopedStorageKey(METRICS_KEY)) || '[]');
           if (Array.isArray(saved)) return saved.filter((entry) => entry?.date && entry?.values);
           if (saved && saved.values) return [saved];
           const legacyValues = Object.fromEntries(Object.entries(saved || {}).filter(([id]) => id.startsWith('metric-')).map(([id, value]) => [id, Number(value)]));
@@ -2219,7 +2396,7 @@
         if (isSupabaseConfigured()) {
           const supabaseHistory = await fetchMetricHistoryFromSupabase();
           if (supabaseHistory.length) {
-            localStorage.setItem(METRICS_KEY, JSON.stringify(supabaseHistory));
+            localStorage.setItem(getScopedStorageKey(METRICS_KEY), JSON.stringify(supabaseHistory));
           }
         }
 
@@ -2359,7 +2536,7 @@
         const history = getMetricHistory().filter((savedEntry) => savedEntry.date !== entry.date);
         history.push(entry);
         history.sort((a, b) => b.date.localeCompare(a.date));
-        localStorage.setItem(METRICS_KEY, JSON.stringify(history));
+        localStorage.setItem(getScopedStorageKey(METRICS_KEY), JSON.stringify(history));
         if (isSupabaseConfigured()) {
           await persistMetricHistory(history);
         }
@@ -2463,19 +2640,19 @@
 
       function getCompletedDates() {
         try {
-          return JSON.parse(localStorage.getItem(COMPLETED_DATES_KEY) || '[]');
+          return JSON.parse(localStorage.getItem(getScopedStorageKey(COMPLETED_DATES_KEY)) || '[]');
         } catch (error) {
           return [];
         }
       }
 
       function saveCompletedDates(dates) {
-        localStorage.setItem(COMPLETED_DATES_KEY, JSON.stringify(dates));
+        localStorage.setItem(getScopedStorageKey(COMPLETED_DATES_KEY), JSON.stringify(dates));
       }
 
       function getRestDates() {
         try {
-          const dates = JSON.parse(localStorage.getItem(REST_DATES_KEY) || '[]');
+          const dates = JSON.parse(localStorage.getItem(getScopedStorageKey(REST_DATES_KEY)) || '[]');
           return Array.isArray(dates) ? dates : [];
         } catch (error) {
           return [];
@@ -2483,7 +2660,7 @@
       }
 
       function saveRestDates(dates) {
-        localStorage.setItem(REST_DATES_KEY, JSON.stringify([...new Set(dates)].sort()));
+        localStorage.setItem(getScopedStorageKey(REST_DATES_KEY), JSON.stringify([...new Set(dates)].sort()));
       }
 
       function isRestDay(date) {
@@ -2693,7 +2870,7 @@
 
       function getRecords() {
         try {
-          const records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+          const records = JSON.parse(localStorage.getItem(getScopedStorageKey(STORAGE_KEY)) || '[]');
           return records.map((record) => ({
             ...record,
             id: record.id || createRecordId()
@@ -2708,13 +2885,13 @@
           ...record,
           id: record.id || createRecordId()
         }));
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedRecords));
-        localStorage.setItem(AUTO_BACKUP_KEY, JSON.stringify(buildBackupData(normalizedRecords)));
+        localStorage.setItem(getScopedStorageKey(STORAGE_KEY), JSON.stringify(normalizedRecords));
+        localStorage.setItem(getScopedStorageKey(AUTO_BACKUP_KEY), JSON.stringify(buildBackupData(normalizedRecords)));
       }
 
       function getMeals() {
         try {
-          const meals = JSON.parse(localStorage.getItem(MEALS_KEY) || '[]');
+          const meals = JSON.parse(localStorage.getItem(getScopedStorageKey(MEALS_KEY)) || '[]');
           return Array.isArray(meals) ? meals.map((meal) => {
             const { photo, ...mealWithoutPhoto } = meal;
             return {
@@ -2729,8 +2906,8 @@
       }
 
       function saveMeals(meals) {
-        localStorage.setItem(MEALS_KEY, JSON.stringify(meals.map((meal) => ({ ...meal, id: meal.id || createRecordId() }))));
-        localStorage.setItem(AUTO_BACKUP_KEY, JSON.stringify(buildBackupData()));
+        localStorage.setItem(getScopedStorageKey(MEALS_KEY), JSON.stringify(meals.map((meal) => ({ ...meal, id: meal.id || createRecordId() }))));
+        localStorage.setItem(getScopedStorageKey(AUTO_BACKUP_KEY), JSON.stringify(buildBackupData()));
       }
 
       function getMealsForDate(date) {
@@ -3451,7 +3628,7 @@
         } else {
           records.push(record);
         }
-        localStorage.setItem(LAST_CATEGORIES_KEY, JSON.stringify(categories));
+        localStorage.setItem(getScopedStorageKey(LAST_CATEGORIES_KEY), JSON.stringify(categories));
         lastSavedRecordId = record.id;
         saveRecords(records);
         if (isSupabaseConfigured()) {
@@ -3589,6 +3766,11 @@
       async function initializeDataLayer() {
         loadSupabaseConfigInputs();
         if (isSupabaseConfigured()) {
+          const client = initSupabaseClient();
+          const { data } = await client.auth.getSession();
+          currentUser = data.session?.user || null;
+          updateAccountStatus();
+          migrateLegacyLocalDataForUser();
           await syncSupabaseToLocal();
         }
         renderStorageSummary();
@@ -3606,15 +3788,18 @@
       mealDateInput.valueAsDate = new Date();
       mealStartTimeInput.value = getCurrentTime();
       mealEndTimeInput.value = getTimeAfter(30);
-      restoreLastCategories();
-      renderMeals();
-      loadMetricValues();
-      renderStorageSummary();
       renderSetFields();
-      updateDayStatus();
-      renderRecords();
-      renderWeeklySummary();
-      initializeDataLayer();
+      async function initializeApp() {
+        await initializeDataLayer();
+        restoreLastCategories();
+        renderMeals();
+        await loadMetricValues();
+        renderStorageSummary();
+        updateDayStatus();
+        renderRecords();
+        renderWeeklySummary();
+      }
+      initializeApp();
     </script>
   </body>
 </html>

@@ -42,6 +42,10 @@ create table if not exists public.body_metrics (
 alter table public.workout_sets
   add column if not exists weight_type text not null default 'kg';
 
+alter table public.workouts alter column user_id drop default;
+alter table public.workout_sets alter column user_id drop default;
+alter table public.body_metrics alter column user_id drop default;
+
 alter table public.workout_sets
   drop constraint if exists workout_sets_weight_type_check;
 
@@ -90,21 +94,35 @@ drop policy if exists "Users can access their own workouts" on public.workouts;
 drop policy if exists "Users can access their own workout sets" on public.workout_sets;
 drop policy if exists "Users can access their own metrics" on public.body_metrics;
 
-create policy "Allow all access for personal app"
+create policy "Users can access their own workouts"
 on public.workouts
 for all
-using (true)
-with check (true);
+using (auth.uid()::text = user_id)
+with check (auth.uid()::text = user_id);
 
-create policy "Allow all access for personal app"
+create policy "Users can access their own workout sets"
 on public.workout_sets
 for all
-using (true)
-with check (true);
+using (
+  auth.uid()::text = user_id
+  and exists (
+    select 1 from public.workouts
+    where workouts.id = workout_sets.workout_id
+      and workouts.user_id = auth.uid()::text
+  )
+)
+with check (
+  auth.uid()::text = user_id
+  and exists (
+    select 1 from public.workouts
+    where workouts.id = workout_sets.workout_id
+      and workouts.user_id = auth.uid()::text
+  )
+);
 
-create policy "Allow all access for personal app"
+create policy "Users can access their own metrics"
 on public.body_metrics
 for all
-using (true)
-with check (true);
+using (auth.uid()::text = user_id)
+with check (auth.uid()::text = user_id);
 
