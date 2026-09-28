@@ -401,6 +401,18 @@
             gap: 12px;
           }
 
+          .exercise-analysis-search {
+            max-width: 360px;
+            margin: -4px 0 14px;
+          }
+
+          .exercise-analysis-status {
+            min-height: 1.4em;
+            margin: -6px 0 12px;
+            color: var(--muted);
+            font-size: 0.76rem;
+          }
+
           .exercise-analysis-card {
             padding: 15px;
             border: 1px solid var(--border);
@@ -1657,6 +1669,7 @@
                     <option value="プレート">プレート</option>
                     <option value="スミスマシン">スミスマシン</option>
                     <option value="パワーラック">パワーラック</option>
+                    <option value="ダンベル">ダンベル</option>
                   </select>
                 </div>
                 <div class="previous-record" id="previous-record" hidden></div>
@@ -1801,6 +1814,8 @@
           <div class="list-header">
             <h2>種目別分析</h2>
           </div>
+          <input class="exercise-analysis-search" id="exercise-analysis-search" type="search" placeholder="種目名で検索" aria-label="種目別分析を検索" />
+          <p class="exercise-analysis-status" id="exercise-analysis-status" aria-live="polite"></p>
           <div class="exercise-analysis" id="exercise-analysis"></div>
         </section>
 
@@ -1968,6 +1983,8 @@
       const calendarPrevButton = document.getElementById('calendar-prev');
       const calendarNextButton = document.getElementById('calendar-next');
       const exerciseAnalysis = document.getElementById('exercise-analysis');
+      const exerciseAnalysisSearch = document.getElementById('exercise-analysis-search');
+      const exerciseAnalysisStatus = document.getElementById('exercise-analysis-status');
       const exerciseBestGrid = document.getElementById('exercise-best-grid');
       const balanceGrid = document.getElementById('balance-grid');
       const mealForm = document.getElementById('meal-form');
@@ -3119,12 +3136,23 @@
         });
 
         if (!exerciseMap.size) {
+          exerciseAnalysisStatus.textContent = '';
           exerciseAnalysis.innerHTML = '<div class="empty">種目を記録すると、平均重量・平均回数・最高重量が表示されます。</div>';
           return;
         }
 
-        exerciseAnalysis.innerHTML = [...exerciseMap.entries()]
+        const query = exerciseAnalysisSearch.value.trim().toLocaleLowerCase('ja');
+        const matches = [...exerciseMap.entries()]
           .sort(([nameA], [nameB]) => nameA.localeCompare(nameB, 'ja'))
+          .filter(([workoutName]) => workoutName.toLocaleLowerCase('ja').includes(query));
+
+        exerciseAnalysisStatus.textContent = `${matches.length}種目を表示中`;
+        if (!matches.length) {
+          exerciseAnalysis.innerHTML = '<div class="empty">検索条件に一致する種目がありません。</div>';
+          return;
+        }
+
+        exerciseAnalysis.innerHTML = matches
           .map(([workoutName, sets]) => {
             const numericWeights = sets
               .map((set) => Number(set.weight))
@@ -3154,6 +3182,8 @@
             `;
           }).join('');
       }
+
+          exerciseAnalysisSearch.addEventListener('input', () => renderExerciseAnalysis(getRecords()));
 
       function renderBestAndBalance(records) {
         if (!exerciseBestGrid || !balanceGrid) return;
