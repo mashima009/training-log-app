@@ -8,6 +8,7 @@ create table if not exists public.workouts (
   user_id text not null default 'personal-user',
   date date not null,
   workout_name text not null,
+  machine_type text not null default '',
   categories text[] not null default '{}',
   intensity text not null default '普通',
   set_count integer not null default 0,
@@ -41,6 +42,9 @@ create table if not exists public.body_metrics (
 
 alter table public.workout_sets
   add column if not exists weight_type text not null default 'kg';
+
+alter table public.workouts
+  add column if not exists machine_type text not null default '';
 
 alter table public.workouts alter column user_id drop default;
 alter table public.workout_sets alter column user_id drop default;

@@ -21,6 +21,7 @@ python -m http.server 8000
 6. ログイン後のトレーニング記録・食事記録・身体データは、Supabase Authのユーザー単位で分離されます。
 
 anon keyはクライアント公開用のキーです。service_role keyは絶対に入力しないでください。Supabase Dashboardの Authentication > Providers で Email providerを有効にしてください。
+マシン種別の同期列を既存プロジェクトへ追加する場合も、更新後の `supabase/schema.sql` を再実行してください。
 
 以前のバージョンで作成したSupabase上の `personal-user` の記録は、自動ではアカウントへ割り当てません。これらが自分の記録であることを確認したうえで、SupabaseのAuthentication > Usersから対象アカウントのUIDを取得し、SQL Editorで `<USER_UUID>` を置き換えて実行してください。
 
