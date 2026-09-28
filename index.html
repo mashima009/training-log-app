@@ -255,7 +255,29 @@
             cursor: pointer;
           }
 
-          .management-actions input { display: none; }
+          .management-actions input[type="file"] { display: none; }
+          #supabase-config-form input:not([type="file"]) {
+            display: block;
+            width: 100%;
+            min-height: 46px;
+            padding: 12px 14px;
+            border: 1px solid rgba(94, 143, 191, 0.42);
+            border-radius: 12px;
+            background: #081321;
+            color: #ffffff;
+            text-align: left;
+            cursor: text;
+          }
+
+          #supabase-config-form input::placeholder {
+            color: rgba(205, 218, 234, 0.72);
+            opacity: 1;
+          }
+
+          #supabase-config-form input:-webkit-autofill {
+            -webkit-text-fill-color: #ffffff;
+            -webkit-box-shadow: 0 0 0 1000px #081321 inset;
+          }
           .danger-btn { background: rgba(239, 68, 68, 0.16); color: #fca5a5; }
           .management-status { margin: 0; min-height: 1.5em; color: var(--muted); font-size: 0.85rem; }
 
