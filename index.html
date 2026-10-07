@@ -942,6 +942,31 @@
             line-height: 1.5;
           }
 
+          .previous-record {
+            display: grid;
+            gap: 7px;
+            margin-top: 8px;
+          }
+
+          .previous-record[hidden] { display: none; }
+
+          .previous-record-option {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 3px;
+            width: 100%;
+            padding: 9px 11px;
+            border: 1px solid rgba(94, 143, 191, 0.3);
+            border-radius: 9px;
+            background: rgba(10, 21, 37, 0.9);
+            color: var(--text);
+            text-align: left;
+          }
+
+          .previous-record-option strong { color: #f3d98b; }
+          .previous-record-option span { color: var(--muted); font-size: 0.74rem; font-weight: 500; }
+
           .submit-btn, .delete-btn { cursor: pointer; }
 
           .finish-btn {
@@ -2632,29 +2657,55 @@
         return getRecords().filter((record) => record.date === date);
       }
 
-      function getLatestExerciseRecord(name) {
-        return getRecords()
-          .filter((record) => record.workout === name && record.setDetails?.length)
-          .sort((a, b) => b.date.localeCompare(a.date))[0];
-      }
-
       function renderPreviousRecord() {
-        const name = workoutInput.value.trim();
-        const record = name ? getLatestExerciseRecord(name) : null;
-        if (!record) {
+        const keyword = workoutInput.value.trim().toLocaleLowerCase('ja');
+        previousRecord.replaceChildren();
+        if (!keyword) {
           previousRecord.hidden = true;
-          previousRecord.innerHTML = '';
           return;
         }
 
-        const summary = record.setDetails.map((set) => `${formatSetWeight(set.weight)} x ${set.reps}回`).join(' / ');
         previousRecord.hidden = false;
-        previousRecord.innerHTML = `<span>前回 (${formatDate(record.date)}): ${summary}</span><button class="secondary" id="copy-previous-record" type="button">前回をコピー</button>`;
+        const latestByExercise = new Map();
+        getRecords()
+          .filter((record) => record.workout && record.setDetails?.length && record.workout.toLocaleLowerCase('ja').includes(keyword))
+          .sort((first, second) => second.date.localeCompare(first.date))
+          .forEach((record) => {
+            const key = record.workout.trim().toLocaleLowerCase('ja');
+            if (!latestByExercise.has(key)) latestByExercise.set(key, record);
+          });
+
+        const candidates = [...latestByExercise.values()].slice(0, 6);
+        if (!candidates.length) {
+          const emptyMessage = document.createElement('span');
+          emptyMessage.className = 'field-hint';
+          emptyMessage.textContent = '一致する前回記録はありません。';
+          previousRecord.append(emptyMessage);
+          return;
+        }
+
+        candidates.forEach((record) => {
+          const button = document.createElement('button');
+          button.className = 'previous-record-option';
+          button.type = 'button';
+          button.dataset.copyRecordId = record.id;
+          const name = document.createElement('strong');
+          name.textContent = record.workout;
+          const details = document.createElement('span');
+          const setSummary = record.setDetails.map((set) => `${formatSetWeight(set.weight)} × ${set.reps}回`).join(' / ');
+          details.textContent = `${formatDate(record.date)} · ${setSummary}`;
+          button.append(name, details);
+          previousRecord.append(button);
+        });
       }
 
-      function copyPreviousRecord() {
-        const record = getLatestExerciseRecord(workoutInput.value.trim());
+      function copyPreviousRecord(recordId) {
+        const record = getRecords().find((savedRecord) => savedRecord.id === recordId);
         if (!record) return;
+        workoutInput.value = record.workout || '';
+        machineTypeInput.value = record.machineType || '';
+        const category = Array.isArray(record.category) ? record.category[0] : record.category;
+        form.querySelectorAll('input[name="category"]').forEach((input) => { input.checked = input.value === category; });
         setsSelect.value = String(record.setDetails.length);
         renderSetFields();
         record.setDetails.forEach((set, index) => {
@@ -2669,11 +2720,13 @@
           repsInput.value = set.reps;
           restInput.value = String(set.restTime || 60);
         });
+        previousRecord.hidden = true;
       }
 
       workoutInput.addEventListener('input', renderPreviousRecord);
       previousRecord.addEventListener('click', (event) => {
-        if (event.target.closest('#copy-previous-record')) copyPreviousRecord();
+        const candidate = event.target.closest('[data-copy-record-id]');
+        if (candidate) copyPreviousRecord(candidate.dataset.copyRecordId);
       });
 
       function renderDaySummary() {
