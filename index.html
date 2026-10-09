@@ -94,6 +94,22 @@
 
           .account-bar strong { color: #f9d97c; }
 
+          .account-page-button {
+            min-height: 34px;
+            padding: 6px 11px;
+            border: 1px solid rgba(94, 143, 191, 0.3);
+            border-radius: 9px;
+            background: rgba(15, 29, 48, 0.86);
+            color: #dce7f5;
+            font-size: 0.76rem;
+          }
+
+          .account-page-button.active {
+            border-color: rgba(226, 185, 79, 0.65);
+            color: #ffe082;
+            background: rgba(242, 189, 36, 0.12);
+          }
+
           .auth-panel {
             max-width: 520px;
             margin: 0 auto 24px;
@@ -113,7 +129,7 @@
 
           .page-nav {
             display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 8px;
             margin-bottom: 30px;
             padding: 8px;
@@ -1661,6 +1677,7 @@
       </header>
       <div class="account-bar" aria-live="polite">
         <span id="account-status">ローカルモード</span>
+            <button class="account-page-button" type="button" data-page="management-page">⚙ アカウント</button>
         <button class="secondary" id="account-signout" type="button" hidden>ログアウト</button>
       </div>
 
@@ -1669,7 +1686,6 @@
         <button type="button" data-page="analytics-page"><span class="nav-icon" aria-hidden="true">▥</span>統計・分析</button>
         <a class="nav-link" href="https://tanitafit.jp/client/member/login" target="_blank" rel="noopener noreferrer" aria-label="タニタフィットを開く"><span class="nav-icon" aria-hidden="true">↗</span>身体データ</a>
         <button type="button" data-page="meals-page"><span class="nav-icon" aria-hidden="true">🍴</span>食事記録</button>
-        <button type="button" data-page="management-page"><span class="nav-icon" aria-hidden="true">⚙</span>アカウント</button>
       </nav>
 
       <div class="page" id="workout-page" data-theme="workout">
