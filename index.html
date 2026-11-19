@@ -1105,18 +1105,6 @@
             text-align: center;
           }
 
-          .sync-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            border: 1px solid rgba(94, 143, 191, 0.3);
-            border-radius: 10px;
-            background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(17, 24, 39, 0.8));
-            color: var(--text);
-            font-size: 0.88rem;
-          }
-
           .category-options {
             display: flex;
             flex-wrap: wrap;
@@ -1138,8 +1126,6 @@
           }
 
           .category-chip input { width: auto; margin: 0; }
-
-          .sync-row input { width: auto; margin: 0; }
 
           .delete-btn {
             background: rgba(239, 68, 68, 0.12);
@@ -1771,14 +1757,9 @@
                 <textarea id="notes" name="notes" placeholder="今日の感想や気づきを記録"></textarea>
               </div>
 
-              <label class="sync-row" for="sync-google">
-                <input id="sync-google" type="checkbox" checked />
-                <span>Google Keep / Calendar に同期する</span>
-              </label>
-
               <button class="submit-btn" type="submit">＋ 種目を追加</button>
               <button class="secondary" id="cancel-edit" type="button" hidden>編集をキャンセル</button>
-              <button class="finish-btn" id="finish-day" type="button">✓ 本日のトレーニングを記録する</button>
+              <button class="finish-btn" id="finish-day" type="button">✓ 今日の記録を完了する</button>
               <button class="secondary" id="rest-day-toggle" type="button">休養日に設定する</button>
               <div class="rest-day-box" id="rest-day-box" aria-live="polite">
                 <strong>休養日の設定</strong>
@@ -1789,11 +1770,11 @@
                 <p>まだ種目がありません。</p>
               </div>
               <div class="sync-actions">
-                <button id="calendar-share" class="secondary" type="button">📅 Calendarへ送る</button>
-                <button id="keep-share" class="ghost" type="button">Keepへ送る</button>
+                <button id="calendar-share" class="secondary" type="button">📅 Calendarで予定を作成</button>
+                <button id="keep-share" class="ghost" type="button">Keepに貼り付ける内容をコピー</button>
               </div>
-              <p class="flow-note">1. 種目を追加して記録する　→　2. 本日のトレーニングを記録する</p>
-              <p class="day-status" id="day-status">記録を追加すると、同じ日に続けて種目を登録できます。</p>
+              <p class="flow-note">種目を追加すると自動で保存されます。完了操作と Calendar / Keep への共有は別々に行えます。</p>
+              <p class="day-status" id="day-status">種目を追加すると保存され、同じ日に続けて登録できます。</p>
             </form>
           </aside>
 
@@ -2013,7 +1994,6 @@
       const recordFilterPrevButton = document.getElementById('record-filter-prev');
       const recordFilterNextButton = document.getElementById('record-filter-next');
       const stats = document.getElementById('stats');
-      const syncGoogleCheckbox = document.getElementById('sync-google');
       const setsSelect = document.getElementById('sets');
       const setFields = document.getElementById('set-fields');
       const dateInput = document.getElementById('date');
@@ -2787,7 +2767,7 @@
         const restDay = isRestDay(date);
 
         submitButton.disabled = restDay || (completed && !editingRecordId);
-        finishDayButton.disabled = !date || restDay || completed || dayRecords.length === 0;
+        finishDayButton.disabled = !date || restDay || dayRecords.length === 0;
         restDayToggle.disabled = !date || completed || dayRecords.length > 0;
         restDayToggle.textContent = restDay ? '休養日を解除する' : '休養日に設定する';
         restDayBox.classList.toggle('is-active', restDay);
@@ -2797,10 +2777,10 @@
         dayStatus.textContent = restDay
           ? `${formatDate(date)}は休養日に設定されています。`
           : completed
-          ? `${formatDate(date)}のトレーニングは記録済みです。`
+          ? `${formatDate(date)}の記録は完了済みです。共有する場合は Calendar / Keep のボタンを使ってください。`
           : dayRecords.length
-            ? '記録を追加すると、同じ日に続けて種目を登録できます。'
-            : '記録を追加すると、同じ日に続けて種目を登録できます。';
+            ? '種目は保存済みです。同じ日に続けて追加できます。'
+            : '種目を追加すると保存され、同じ日に続けて登録できます。';
         renderDaySummary();
       }
 
@@ -3527,34 +3507,6 @@
         return buildDailySummary(date, records);
       }
 
-      async function syncToGoogle(summary) {
-        if (!syncGoogleCheckbox.checked || !summary) {
-          return;
-        }
-
-        const keepText = buildKeepText(summary);
-        const keepUrl = 'https://keep.google.com/';
-        const calendarUrl = buildCalendarUrl(summary);
-
-        const calendarWindow = window.open(calendarUrl, '_blank', 'noopener,noreferrer');
-        const keepWindow = window.open(keepUrl, '_blank', 'noopener,noreferrer');
-
-        const copied = await copyToClipboard(keepText);
-
-        if (!calendarWindow || !keepWindow) {
-          dayStatus.textContent = 'ポップアップがブロックされたため、ブラウザのポップアップ設定をオンにしてください。';
-          return;
-        }
-
-        if (!copied) {
-          dayStatus.textContent = 'Google Keep に貼り付ける内容をコピーできませんでした。下記の内容を手動で貼り付けてください。';
-          window.prompt('Google Keep に貼り付ける内容をコピーしてください。', keepText);
-          return;
-        }
-
-        dayStatus.textContent = `${formatDate(summary.date)}の記録を Google Calendar / Keep に共有しました。`;
-      }
-
       function renderRecordFilterCalendar(records = getRecords()) {
         const year = recordFilterMonth.getFullYear();
         const month = recordFilterMonth.getMonth();
@@ -3767,7 +3719,6 @@
         restTimers.forEach((timer) => clearInterval(timer.interval));
         restTimers.clear();
         dateInput.value = selectedDate;
-        syncGoogleCheckbox.checked = true;
         submitButton.textContent = '種目を追加';
         cancelEditButton.hidden = true;
         renderSetFields();
@@ -3785,7 +3736,7 @@
         updateDayStatus();
       });
 
-      finishDayButton.addEventListener('click', async () => {
+      finishDayButton.addEventListener('click', () => {
         const date = dateInput.value;
         if (!date) {
           alert('日付を選択してください。');
@@ -3798,7 +3749,6 @@
           return;
         }
 
-        const summary = buildDailySummary(date, records);
         const dates = getCompletedDates();
         if (!dates.includes(date)) {
           dates.push(date);
@@ -3806,7 +3756,6 @@
         }
 
         updateDayStatus();
-        await syncToGoogle(summary);
       });
 
       restDayToggle.addEventListener('click', () => {
@@ -3866,7 +3815,7 @@
           return;
         }
 
-        dayStatus.textContent = `${formatDate(summary.date)}の内容を Google Keep に転送しました。`;
+        dayStatus.textContent = `${formatDate(summary.date)}の記録を Keep に貼り付けるため、内容をコピーしました。`;
       });
 
       recordList.addEventListener('click', (event) => {
